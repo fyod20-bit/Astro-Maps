@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroWeather Pro V6.2</title>
+    
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Chart.js for Forecast Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Default Night Theme */
+            --bg-color: #050810;
+            --panel-bg: rgba(22, 31, 48, 0.7);
+            --panel-border: rgba(51, 65, 85, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #ef4444; /* Red light friendly */
+            --accent-hover: #dc2626;
+            --secondary-bg: rgba(15, 21, 35, 0.8);
+            
+            --chart-cloud-border: #e2e8f0;
+            --chart-cloud-bg: rgba(226, 232, 240, 0.1);
+            --chart-hum: #38bdf8;
+            --chart-wind: #fbbf24;
+            
+            --glass-blur: blur(12px);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        body.light-theme {
+            /* Day Theme */
+            --bg-color: #f1f5f9;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --panel-border: rgba(203, 213, 225, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #3b82f6; 
+            --accent-hover: #2563eb;
+            --secondary-bg: rgba(248, 250, 252, 0.9);
+            
+            --chart-cloud-border: #64748b;
+            --chart-cloud-bg: rgba(100, 116, 139, 0.1);
+            --chart-hum: #0284c7;
+            --chart-wind: #d97706;
+            
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, rgba(239, 68, 68, 0.05), transparent 400px);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            min-height: 100vh;
+        }
+
+        body.light-theme {
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px);
+        }
+
+        @media (min-width: 950px) {
+            body {
+                flex-direction: row;
+                padding: 25px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            .main-content {
+                flex: 1;
+                min-width: 0;
+            }
+            .sidebar {
+                width: 380px;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        h2, h3 { 
+            color: var(--accent); 
+            margin-top: 0; 
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+            margin-bottom: 20px;
+        }
+
+        #map { 
+            height: 280px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            z-index: 1;
+            border: 1px solid var(--panel-border);
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        @media (min-width: 600px) {
+            .weather-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .stat-box {
+            background: var(--secondary-bg);
+            padding: 15px 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--panel-border);
+            transition: transform 0.2s, background 0.4s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+        
+        .stat-val { font-size: 1.4em; font-weight: 700; color: var(--text-main); }
+        .stat-label { font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+        
+        .dew-warning { color: #f59e0b; }
+        .dew-safe { color: #10b981; }
+
+        button {
+            background-color: var(--secondary-bg);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover { 
+            background-color: var(--accent); 
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        button.primary-btn {
+            background-color: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        
+        button.primary-btn:hover {
+            background-color: var(--accent-hover);
+        }
+        
+        .target-item {
+            padding: 15px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .target-item:hover {
+            transform: translateX(4px);
+            border-color: var(--accent);
+        }
+
+        .target-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .target-name {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 1.05rem;
+        }
+
+        .tag-container {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.7em;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--panel-border);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        #favorites-list { list-style: none; padding: 0; margin: 0; }
+        #favorites-list li {
+            padding: 12px 15px;
+            background: var(--secondary-bg);
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--panel-border);
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        #favorites-list li:hover { border-color: var(--accent); }
+        
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+            margin-top: 20px;
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid var(--panel-border);
+            box-sizing: border-box;
+        }
+        
+        .coord-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .timeline-container {
+            display: flex;
+            justify-content: space-between;
+            background: var(--secondary-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            margin-bottom: 20px;
+        }
+
+        .timeline-item {
+            text-align: center;
+        }
+
+        .timeline-icon { color: var(--accent); margin-bottom: 5px; font-size: 1.2rem; }
+        .timeline-time { font-weight: bold; font-size: 1.1rem; }
+        .timeline-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Error Banner */
+        #error-banner {
+            display: none;
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--accent);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <div id="error-banner"><i class="fa-solid fa-triangle-exclamation"></i> <span id="error-text">Failed to fetch data.</span></div>
+        <div class="panel">
+            <h2><i class="fa-solid fa-map-location-dot"></i> Location Planner</h2>
+            <div id="map"></div>
+            
+            <div class="btn-group">
+                <button onclick="refreshData()" class="primary-btn"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+                <button onclick="saveLocationFromMap()" id="save-btn"><i class="fa-solid fa-bookmark"></i> Save Site</button>
+                <button onclick="toggleTheme()" id="theme-btn"><i class="fa-solid fa-sun"></i> Day Mode</button>
+            </div>
+            <p class="coord-text"><i class="fa-solid fa-crosshairs"></i> <span id="coord-display">31.5282, 34.5956</span></p>
+        </div>
+
+        <div class="panel">
+            <h2><i class="fa-solid fa-cloud-moon"></i> Live Conditions</h2>
+            <div class="weather-grid">
+                <div class="stat-box">
+                    <i class="fa-solid fa-cloud stat-icon"></i>
+                    <div class="stat-val" id="val-clouds">--%</div>
+                    <div class="stat-label">Cloud Cover</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-eye stat-icon"></i>
+                    <div class="stat-val" id="val-seeing">--</div>
+                    <div class="stat-label">Est. Seeing</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-droplet stat-icon"></i>
+                    <div class="stat-val" id="val-dew">--°C</div>
+                    <div class="stat-label" id="val-dew-label">Dew Point</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-wind stat-icon"></i>
+                    <div class="stat-val" id="val-wind">-- km/h</div>
+                    <div class="stat-label">Wind Speed</div>
+                </div>
+                <!-- FIXED: Combined Temp and Hum box to maintain 6-box grid -->
+                <div class="stat-box">
+                    <i class="fa-solid fa-temperature-half stat-icon"></i>
+                    <div class="stat-val" id="val-temp" style="font-size: 1.1em;">--°C / --%</div>
+                    <div class="stat-label">Temp / Humidity</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fa-solid fa-moon stat-icon"></i>
+                    <div class="stat-val" id="val-moon">--%</div>
+                    <div class="stat-label" id="val-moon-label">Moon</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2><i class="fa-solid fa-chart-area"></i> Night Sky Forecast</h2>
+            
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fa-solid fa-sunset"></i></div>
+                    <div class="timeline-time" id="time-sunset">--:--</div>
+                    <div class="timeline-label">Sunset</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fa-solid fa-star"></i></div>
+                    <div class="timeline-time" id="time-dusk">--:--</div>
+                    <div class="timeline-label">Astro Dusk</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-icon"><i class="fa-solid fa-sun" style="opacity: 0.5;"></i></div>
+                    <div class="timeline-time" id="time-dawn">--:--</div>
+                    <div class="timeline-label">Astro Dawn</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="panel">
+            <h2><i class="fa-solid fa-location-dot"></i> Saved Sites</h2>
+            <ul id="favorites-list"></ul>
+        </div>
+
+        <div class="panel" style="flex-grow: 1;">
+            <h2><i class="fa-solid fa-camera"></i> Imaging Targets</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Optimized for ~280mm FOV / APS-C</p>
+            <div id="target-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Initial setup
+        let currentLat = 31.5282; 
+        let currentLon = 34.5956;
+        let map, marker, tileLayer;
+        let forecastChart = null; 
+        let isDarkMode = true; 
+        
+        // Expanded Database for wide-field astrophotography
+        const targets = [
+            { name: "Veil Nebula Complex", type: "SNR", constellation: "Cygnus", filter: "Dual-Band", season: "Summer/Autumn", difficulty: "Medium" },
+            { name: "North America (NGC 7000)", type: "Emission", constellation: "Cygnus", filter: "Dual-Band", season: "Summer/Autumn", difficulty: "Easy" },
+            { name: "Lion Nebula (Sh2-132)", type: "Emission", constellation: "Cepheus", filter: "SHO", season: "Autumn", difficulty: "Hard" },
+            { name: "Andromeda Galaxy (M31)", type: "Galaxy", constellation: "Andromeda", filter: "Broadband", season: "Autumn/Winter", difficulty: "Easy" },
+            { name: "Pleiades (M45)", type: "Reflection", constellation: "Taurus", filter: "Broadband", season: "Winter", difficulty: "Easy" },
+            { name: "Orion & Horsehead", type: "Emission", constellation: "Orion", filter: "Broadband/Dual", season: "Winter", difficulty: "Easy" },
+            { name: "Rosette Nebula", type: "Emission", constellation: "Monoceros", filter: "SHO/Dual", season: "Winter", difficulty: "Medium" },
+            { name: "Heart Nebula (IC 1805)", type: "Emission", constellation: "Cassiopeia", filter: "Dual-Band", season: "Autumn/Winter", difficulty: "Medium" },
+            { name: "Rho Ophiuchi Cloud", type: "Dark/Reflection", constellation: "Ophiuchus", filter: "Broadband", season: "Summer", difficulty: "Hard" }
+        ];
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('astroTheme');
+            if (savedTheme === 'light') {
+                isDarkMode = false;
+                document.body.classList.add('light-theme');
+            }
+            updateThemeUI();
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('light-theme', !isDarkMode);
+            localStorage.setItem('astroTheme', isDarkMode ? 'dark' : 'light');
+            
+            updateThemeUI();
+            updateMapTheme();
+            if(window.lastWeatherData) renderForecastChart(window.lastWeatherData); 
+        }
+
+        function updateThemeUI() {
+            const btn = document.getElementById('theme-btn');
+            btn.innerHTML = isDarkMode ? '<i class="fa-solid fa-sun"></i> Day Mode' : '<i class="fa-solid fa-moon"></i> Night Mode';
+            renderTargets();
+        }
+
+        function updateMapTheme() {
+            if (!map) return;
+            if (tileLayer) map.removeLayer(tileLayer);
+            
+            const tileUrl = isDarkMode 
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'; 
+                
+            tileLayer = L.tileLayer(tileUrl, {
+                attribution: '© OpenStreetMap & CARTO',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+        }
+
+        function initMap() {
+            map = L.map('map').setView([currentLat, currentLon], 10);
+            updateMapTheme();
+            
+            // Custom marker icon to match theme
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="background-color: var(--accent); width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            marker = L.marker([currentLat, currentLon], {icon: customIcon}).addTo(map);
+
+            map.on('click', function(e) {
+                currentLat = e.latlng.lat;
+                currentLon = e.latlng.lng;
+                marker.setLatLng(e.latlng);
+                document.getElementById('coord-display').innerText = `${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}`;
+            });
+        }
+
+        function estimateSeeingFromWind(windSpeedKmh) {
+            if (windSpeedKmh < 5) return "Excellent";
+            if (windSpeedKmh < 10) return "Good";
+            if (windSpeedKmh < 15) return "Average";
+            if (windSpeedKmh < 25) return "Poor";
+            return "Terrible";
+        }
+
+        function calculateDewPoint(temp, humidity) {
+            const a = 17.625;
+            const b = 243.04;
+            const alpha = Math.log(humidity/100) + (a * temp) / (b + temp);
+            return (b * alpha) / (a - alpha);
+        }
+
+        async function fetchWeather() {
+            document.getElementById('error-banner').style.display = 'none';
+            
+            const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,cloud_cover&daily=sunrise,sunset&timezone=auto`;
+            
+            try {
+                const res = await fetch(meteoUrl);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                
+                window.lastWeatherData = data; 
+                
+                const currentTemp = data.current.temperature_2m;
+                const currentHum = data.current.relative_humidity_2m;
+                const currentWind = data.current.wind_speed_10m;
+                const currentClouds = data.current.cloud_cover;
+                
+                const dewPoint = calculateDewPoint(currentTemp, currentHum);
+                const dewDiff = currentTemp - dewPoint;
+                
+                const dewEl = document.getElementById('val-dew');
+                const dewLabel = document.getElementById('val-dew-label');
+                dewEl.innerText = `${dewPoint.toFixed(1)}°C`;
+                
+                if (dewDiff <= 2.5) {
+                    dewEl.className = 'stat-val dew-warning';
+                    dewLabel.innerHTML = 'Dew Risk High <i class="fa-solid fa-triangle-exclamation"></i>';
+                } else {
+                    dewEl.className = 'stat-val dew-safe';
+                    dewLabel.innerText = 'Dew Point (Safe)';
+                }
+
+                // BUG FIX: Set combined temp/hum string instead of looking for deleted 'val-hum' ID
+                document.getElementById('val-temp').innerText = `${currentTemp.toFixed(1)}°C / ${currentHum}%`;
+                document.getElementById('val-wind').innerText = `${currentWind.toFixed(1)} km/h`;
+                
+                const cloudsEl = document.getElementById('val-clouds');
+                cloudsEl.innerText = `${currentClouds}%`;
+                cloudsEl.style.color = currentClouds > 30 ? 'var(--accent)' : '#10b981'; 
+                
+                document.getElementById('val-seeing').innerText = estimateSeeingFromWind(currentWind);
+
+                renderForecastChart(data);
+
+            } catch (err) {
+                console.error("Weather fetch failed", err);
+                const banner = document.getElementById('error-banner');
+                banner.style.display = 'block';
+                document.getElementById('error-text').innerText = "Failed to fetch weather data. " + err.message;
+            }
+        }
+        
+        function getCssVar(name) {
+            return getComputedStyle(document.body).getPropertyValue(name).trim();
+        }
+        
+        function renderForecastChart(data) {
+            if (!data || !data.daily || !data.daily.sunset) return;
+            
+            const todaySunset = new Date(data.daily.sunset[0]);
+            const tomorrowSunrise = new Date(data.daily.sunrise[1] || data.daily.sunrise[0]); 
+            
+            // Approximate astro dusk/dawn since it's not in the base API (Approx 80 mins for lat 31)
+            const astroDusk = new Date(todaySunset.getTime() + (80 * 60000));
+            const astroDawn = new Date(tomorrowSunrise.getTime() - (80 * 60000));
+            
+            const formatTimeStr = (date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            document.getElementById('time-sunset').innerText = formatTimeStr(todaySunset);
+            document.getElementById('time-dusk').innerText = formatTimeStr(astroDusk);
+            document.getElementById('time-dawn').innerText = formatTimeStr(astroDawn);
+
+            const hourlyTimes = data.hourly.time;
+            
+            let chartLabels = [];
+            let cloudData = [];
+            let humData = [];
+            let windData = [];
+            let tempData = [];
+
+            for (let i = 0; i < hourlyTimes.length; i++) {
+                const forecastTime = new Date(hourlyTimes[i]);
+                const startWindow = new Date(todaySunset.getTime() - 3600000);
+                const endWindow = new Date(tomorrowSunrise.getTime() + 3600000);
+
+                if (forecastTime >= startWindow && forecastTime <= endWindow) {
+                    chartLabels.push(forecastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    cloudData.push(data.hourly.cloud_cover[i]);
+                    humData.push(data.hourly.relative_humidity_2m[i]);
+                    windData.push(data.hourly.wind_speed_10m[i]);
+                    tempData.push(data.hourly.temperature_2m[i]);
+                }
+                if (forecastTime > endWindow) break;
+            }
+
+            if (chartLabels.length === 0) {
+                for(let i = 0; i < 12; i++){
+                    const forecastTime = new Date(hourlyTimes[i]);
+                    chartLabels.push(forecastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    cloudData.push(data.hourly.cloud_cover[i]);
+                    humData.push(data.hourly.relative_humidity_2m[i]);
+                    windData.push(data.hourly.wind_speed_10m[i]);
+                    tempData.push(data.hourly.temperature_2m[i]);
+                }
+            }
+
+            if (forecastChart) {
+                forecastChart.destroy();
+            }
+
+            const textColor = getCssVar('--text-muted');
+            const gridColor = getCssVar('--panel-border');
+            
+            const cCloudBorder = getCssVar('--chart-cloud-border');
+            const cCloudBg = getCssVar('--chart-cloud-bg');
+            const cHum = getCssVar('--chart-hum');
+            const cWind = getCssVar('--chart-wind');
+            const tooltipBg = isDarkMode ? 'rgba(15, 21, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+            const tooltipText = getCssVar('--text-main');
+
+            Chart.defaults.color = textColor;
+            Chart.defaults.borderColor = gridColor;
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Clouds (%)',
+                            data: cloudData,
+                            borderColor: cCloudBorder,
+                            backgroundColor: cCloudBg,
+                            borderWidth: 2,
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: humData,
+                            borderColor: cHum,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Wind (km/h)',
+                            data: windData,
+                            borderColor: cWind,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Temp (°C)',
+                            data: tempData,
+                            borderColor: getCssVar('--accent'),
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            hidden: true,
+                            pointRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: tooltipBg,
+                            titleColor: tooltipText,
+                            bodyColor: tooltipText,
+                            borderColor: gridColor,
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxRotation: 45, minRotation: 45 }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            title: { display: false }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }, 
+                            title: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateMoonPhase() {
+            const now = new Date();
+            const lp = 2551442.8; 
+            const newMoon = new Date(1970, 0, 7, 20, 35, 0).getTime();
+            const phase = ((now.getTime() - newMoon) / 1000) % lp;
+            const fraction = Math.round((phase / lp) * 100);
+            
+            let phaseName = "Waxing";
+            if(fraction < 5) phaseName = "New";
+            else if(fraction > 45 && fraction < 55) phaseName = "Full";
+            else if(fraction >= 55) phaseName = "Waning";
+            
+            document.getElementById('val-moon').innerText = `${fraction}%`;
+            document.getElementById('val-moon-label').innerText = `Moon (${phaseName})`;
+            return fraction;
+        }
+
+        function getSeason() {
+            const month = new Date().getMonth(); 
+            if (month >= 2 && month <= 4) return "Spring";
+            if (month >= 5 && month <= 7) return "Summer";
+            if (month >= 8 && month <= 10) return "Autumn";
+            return "Winter";
+        }
+
+        function renderTargets() {
+            const list = document.getElementById('target-list');
+            list.innerHTML = '';
+            
+            const currentSeason = getSeason();
+            const recommended = targets.filter(t => t.season.includes(currentSeason) || t.season.includes(currentSeason === "Summer" ? "Autumn" : "")); 
+            
+            if (recommended.length === 0) {
+                 list.innerHTML = `<p style="color:var(--text-muted); text-align:center;">No optimized targets for this exact season.</p>`;
+                 return;
+            }
+            
+            const tagColor = getCssVar('--accent');
+
+            recommended.forEach(t => {
+                let diffColor = t.difficulty === 'Easy' ? '#10b981' : (t.difficulty === 'Medium' ? '#f59e0b' : '#ef4444');
+                
+                list.innerHTML += `
+                    <div class="target-item">
+                        <div class="target-header">
+                            <span class="target-name">${t.name}</span>
+                            <i class="fa-solid fa-circle" style="color: ${diffColor}; font-size: 0.6rem;" title="${t.difficulty}"></i>
+                        </div>
+                        <div class="tag-container">
+                            <span class="tag"><i class="fa-solid fa-star"></i> ${t.constellation}</span>
+                            <span class="tag" style="border-color: ${tagColor}; color: ${isDarkMode ? '#fff' : '#000'}"><i class="fa-solid fa-filter"></i> ${t.filter}</span>
+                            <span class="tag"><i class="fa-solid fa-clock"></i> ${t.season}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveLocationFromMap() {
+            const name = prompt("Name this observing site:", "New Dark Site");
+            if (name) {
+                const favs = JSON.parse(localStorage.getItem('astroFavPlaces') || '[]');
+                favs.push({ name: name, lat: currentLat, lon: currentLon });
+                localStorage.setItem('astroFavPlaces', JSON.stringify(favs));
+                loadFavorites();
+            }
+        }
+
+        function loadFavorites() {
+            const favs = JSON.parse(localStorage.getItem('astroFavPlaces') || '[]');
+            const list = document.getElementById('favorites-list');
+            list.innerHTML = '';
+            
+            if(favs.length === 0) {
+                list.innerHTML = `<li style="justify-content:center; color:var(--text-muted); cursor:default; border-style: dashed;">No saved sites yet</li>`;
+                return;
+            }
+
+            favs.forEach((f, idx) => {
+                list.innerHTML += `
+                    <li onclick="loadFav(${idx})">
+                        <span><i class="fa-solid fa-map-pin" style="color:var(--text-muted); margin-right:8px;"></i> ${f.name}</span>
+                        <button onclick="deleteFav(event, ${idx})" style="background:none; border:none; color:var(--text-muted); padding:5px; width:auto; font-size:1.2rem;" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </li>
+                `;
+            });
+        }
+
+        function loadFav(idx) {
+            const favs = JSON.parse(localStorage.getItem('astroFavPlaces'));
+            currentLat = favs[idx].lat;
+            currentLon = favs[idx].lon;
+            marker.setLatLng([currentLat, currentLon]);
+            map.setView([currentLat, currentLon], 10);
+            document.getElementById('coord-display').innerText = `${currentLat.toFixed(4)}, ${currentLon.toFixed(4)}`;
+            refreshData();
+            
+            if(window.innerWidth < 950) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        function deleteFav(event, idx) {
+            event.stopPropagation(); 
+            const favs = JSON.parse(localStorage.getItem('astroFavPlaces') || '[]');
+            favs.splice(idx, 1);
+            localStorage.setItem('astroFavPlaces', JSON.stringify(favs));
+            loadFavorites();
+        }
+
+        function refreshData() {
+            fetchWeather();
+            calculateMoonPhase();
+            renderTargets();
+        }
+
+        // Initialize
+        window.onload = () => {
+            loadTheme();
+            initMap();
+            loadFavorites();
+            refreshData();
+        };
+    </script>
+</body>
+</html>
