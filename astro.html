@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AstroWeather Pro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS & JS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js & Annotation Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: #0f172a; /* slate-900 */
+            color: #e2e8f0; /* slate-200 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Astro Red Mode Filter */
+        body.red-mode {
+            filter: sepia(100%) hue-rotate(315deg) saturate(500%) brightness(0.8) contrast(1.2);
+            background-color: #000;
+        }
+
+        /* Hide scrollbar for clean horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0.25rem;
+            color: #64748b; /* slate-500 */
+            transition: all 0.2s;
+        }
+        .bottom-nav-item.active {
+            color: #38bdf8; /* sky-400 */
+        }
+        .bottom-nav-item i {
+            font-size: 1.15rem;
+            margin-bottom: 0.25rem;
+        }
+        .bottom-nav-item span {
+            font-size: 0.65rem;
+        }
+
+        /* Glassmorphism cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        #map { height: 100%; width: 100%; }
+        
+        /* Chart container */
+        .chart-container {
+            width: 1200px; /* Force width to allow horizontal scrolling */
+            height: 300px;
+            position: relative;
+        }
+        
+        .toggle-btn.active {
+            opacity: 1;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .toggle-btn {
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .bortle-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- Top Header -->
+    <header class="pt-10 pb-4 px-6 bg-slate-900/90 backdrop-blur-md z-10 flex justify-between items-center border-b border-slate-800">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-wider">ASTRO<span class="text-sky-400">WEATHER</span></h1>
+            <p class="text-xs text-slate-400 mt-1 flex items-center gap-1" id="currentLocationDisplay">
+                <i class="fas fa-location-dot"></i> מאתר מיקום...
+            </p>
+        </div>
+        <div class="flex gap-4 text-xl items-center">
+            <div id="bortleDisplay" class="bortle-badge bg-slate-700 text-slate-300 mr-2">Bortle --</div>
+            <button onclick="toggleRedMode()" class="text-slate-300 hover:text-red-500 transition-colors">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button onclick="openSettings()" class="text-slate-300 hover:text-sky-400 transition-colors">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-24 relative" id="mainContent">
+        
+        <!-- View 1: Dashboard (Default) -->
+        <div id="view-dashboard" class="p-4 space-y-6">
+            
+            <!-- Current Status -->
+            <div class="glass-card p-6 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-lg">
+                <div class="absolute -top-10 -right-10 text-9xl text-slate-700/30 opacity-50"><i class="fas fa-moon"></i></div>
+                <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-1">תחזית הלילה</h2>
+                <div class="text-6xl font-bold text-white mb-2 tracking-tighter" id="tonightScore">--<span class="text-3xl text-slate-500 font-normal">/100</span></div>
+                <p class="text-sky-300 font-medium mb-4 text-lg" id="tonightVerdict">מחשב נתונים...</p>
+                
+                <div class="grid grid-cols-4 w-full gap-2 mt-2 text-sm border-t border-slate-700/50 pt-4">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="fas fa-cloud text-slate-400 mb-1.5 text-lg"></i>
+                        <span id="currentCloud" class="font-medium">--%</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center border-r border-slate-700/50">
+                        <i class="fas fa-wind text-slate-400 mb-1.5 text-lg"></i>
+                        <span id="currentWind" class="font-medium">--</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center border-r border-slate-700/50">
+                        <i class="fas fa-droplet text-slate-400 mb-1.5 text-lg"></i>
+                        <span id="currentDew" class="font-medium">--°</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center border-r border-slate-700/50">
+                        <i class="fas fa-moon text-slate-400 mb-1.5 text-lg"></i>
+                        <span id="currentMoon" class="font-medium">--%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7 Days Forecast -->
+            <div>
+                <h3 class="font-bold text-white mb-1 px-1 text-lg"><i class="fas fa-calendar-alt text-sky-400 ml-2"></i>תחזית לשבוע הקרוב</h3>
+                <p class="text-xs text-slate-400 mb-4 px-1">לחץ על יום כדי לראות גרף שעתי מפורט</p>
+                <div class="space-y-2" id="forecastList">
+                    <!-- Generated via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- View 2: Targets (New Tab) -->
+        <div id="view-targets" class="hidden p-4 space-y-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-xl font-bold text-white"><i class="fas fa-crosshairs text-sky-400 ml-2"></i>מטרות מומלצות</h2>
+                <button onclick="switchTab('equipment')" class="text-xs font-medium text-sky-400 bg-sky-900/30 px-3 py-1.5 rounded-lg border border-sky-800/50 hover:bg-sky-800/50 transition-colors">
+                    הגדר ציוד
+                </button>
+            </div>
+            <p class="text-sm text-slate-400 mb-4">הרשימה מחושבת על סמך אורך המוקד של הציוד שלך, סוג החיישן והפילטר, בהתאמה לעונה הנוכחית.</p>
+            
+            <div id="targetsList" class="space-y-3">
+                <!-- Loaded dynamically based on equipment -->
+                <div class="text-center text-slate-400 text-sm py-10 glass-card"><i class="fas fa-spinner fa-spin ml-2"></i>מחשב מטרות אופטימליות...</div>
+            </div>
+        </div>
+
+        <!-- View 3: Wind & Cloud Map (New Tab) -->
+        <div id="view-wind" class="hidden p-0 h-full flex flex-col">
+            <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center z-10 backdrop-blur">
+                <div>
+                    <h2 class="text-xl font-bold text-white"><i class="fas fa-satellite text-sky-400 ml-2"></i>מפת עננים ורוח</h2>
+                    <p class="text-xs text-slate-400 mt-1">נתוני אמת (מבוסס Windy ECMWF)</p>
+                </div>
+            </div>
+            <div class="relative flex-1 bg-slate-800 w-full h-full">
+                <iframe id="windyIframe" width="100%" height="100%" src="about:blank" frameborder="0"></iframe>
+                <div id="windyPlaceholder" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm text-center px-4 bg-slate-900 z-0 hidden">
+                    <i class="fas fa-spinner fa-spin ml-2"></i> טוען מפה...
+                </div>
+            </div>
+        </div>
+
+        <!-- View 4: Equipment -->
+        <div id="view-equipment" class="hidden p-4 space-y-4">
+            <h2 class="text-xl font-bold text-white mb-4">הציוד שלי (My Rig)</h2>
+            
+            <div class="glass-card p-5 space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">טלסקופ / עדשה</label>
+                    <div class="relative">
+                        <select id="eqTelescope" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-white appearance-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all">
+                            <option value="FRA400">Askar FRA400 (400mm)</option>
+                            <option value="RedCat51">William Optics RedCat 51 (250mm)</option>
+                            <option value="Samyang135">Samyang 135mm f/2.0</option>
+                            <option value="C8">Celestron C8 (2032mm)</option>
+                            <option value="Newton200">200mm Newtonian (800mm)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">מצלמה</label>
+                    <div class="relative">
+                        <select id="eqCamera" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-white appearance-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all">
+                            <option value="2600mc">ZWO ASI2600MC Pro (Color)</option>
+                            <option value="533mc">ZWO ASI533MC Pro (Color)</option>
+                            <option value="2600mm">ZWO ASI2600MM Pro (Mono)</option>
+                            <option value="DSLR">DSLR / Mirrorless (Modded)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">פילטר ראשי</label>
+                    <div class="relative">
+                        <select id="eqFilter" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-white appearance-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all">
+                            <option value="lultimate_e2">L-Ultimate + Askar E2 (SHO)</option>
+                            <option value="lenhance">Optolong L-eNhance / L-eXtreme</option>
+                            <option value="antlia_alp-t">Antlia ALP-T Dual Band</option>
+                            <option value="lpro">Optolong L-Pro (Broadband)</option>
+                            <option value="sho_mono">SHO Narrowband (Mono)</option>
+                            <option value="none">ללא פילטר / IR Cut</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">חצובה (Mount)</label>
+                    <div class="relative">
+                        <select id="eqMount" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-white appearance-none focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all">
+                            <option value="sal33">MLAstro SAL-33</option>
+                            <option value="am5">ZWO AM5</option>
+                            <option value="heq5">SkyWatcher HEQ5 / EQ6-R</option>
+                            <option value="staradventurer">Star Adventurer</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <button onclick="saveEquipment()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-4 rounded-xl mt-6 transition-colors shadow-lg shadow-sky-900/50 flex justify-center items-center gap-2">
+                    <i class="fas fa-save"></i> שמור ציוד
+                </button>
+            </div>
+        </div>
+
+        <!-- View 5: Locations -->
+        <div id="view-locations" class="hidden p-4 h-full flex flex-col">
+            <h2 class="text-xl font-bold text-white mb-4">מיקומים שמורים</h2>
+            
+            <!-- Global Search Bar -->
+            <div class="relative mb-6">
+                <input type="text" id="searchLocationInput" placeholder="חפש עיר או מקום בעולם..." 
+                    class="w-full bg-slate-800/80 border border-slate-600 rounded-2xl py-3.5 px-12 text-white placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all shadow-inner">
+                <i class="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                <button onclick="searchLocation()" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-sky-600 hover:bg-sky-500 text-white text-sm px-4 py-2 rounded-xl transition-colors font-medium">
+                    חפש
+                </button>
+            </div>
+            
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-semibold text-slate-400">הרשימה שלי</h3>
+                <span class="text-xs text-slate-500" id="locationsCount">0 מיקומים</span>
+            </div>
+            
+            <div id="locationsList" class="space-y-3 mb-4 flex-1 overflow-y-auto pr-1">
+                <!-- Dynamically populated -->
+            </div>
+
+            <button onclick="openMapModal()" class="w-full bg-slate-700/80 backdrop-blur border border-slate-600 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-600 mt-2 transition-colors">
+                <i class="fas fa-map-marked-alt text-sky-400"></i> הוסף מיקום חדש ממפה
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation (5 Tabs) -->
+    <nav class="fixed bottom-0 w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 flex justify-between pb-8 pt-2 px-2 z-20 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.3)]">
+        <button class="bottom-nav-item active flex-1 rounded-xl hover:bg-slate-800/50" onclick="switchTab('dashboard')" id="nav-dashboard">
+            <i class="fas fa-home"></i>
+            <span class="font-medium mt-1">ראשי</span>
+        </button>
+        <button class="bottom-nav-item flex-1 rounded-xl hover:bg-slate-800/50" onclick="switchTab('targets')" id="nav-targets">
+            <i class="fas fa-crosshairs"></i>
+            <span class="font-medium mt-1">מטרות</span>
+        </button>
+        <button class="bottom-nav-item flex-1 rounded-xl hover:bg-slate-800/50" onclick="switchTab('wind')" id="nav-wind">
+            <i class="fas fa-satellite"></i>
+            <span class="font-medium mt-1">מפה</span>
+        </button>
+        <button class="bottom-nav-item flex-1 rounded-xl hover:bg-slate-800/50" onclick="switchTab('equipment')" id="nav-equipment">
+            <i class="fas fa-camera"></i>
+            <span class="font-medium mt-1">ציוד</span>
+        </button>
+        <button class="bottom-nav-item flex-1 rounded-xl hover:bg-slate-800/50" onclick="switchTab('locations')" id="nav-locations">
+            <i class="fas fa-map-marker-alt"></i>
+            <span class="font-medium mt-1">מיקומים</span>
+        </button>
+    </nav>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Hourly Chart Modal -->
+    <div id="hourlyChartModal" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col transition-opacity">
+        <!-- Header -->
+        <div class="pt-10 pb-4 px-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shadow-lg">
+            <h2 class="text-lg font-bold text-white flex items-center"><i class="fas fa-chart-line text-sky-400 ml-2"></i>תחזית שעתית <span id="chartDateTitle" class="text-sm font-normal text-slate-300 mr-2"></span></h2>
+            <button onclick="closeHourlyChart()" class="text-slate-400 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full bg-slate-700 transition-colors">&times;</button>
+        </div>
+        
+        <!-- Controls / Toggles -->
+        <div class="p-4 bg-slate-900 flex flex-wrap gap-3 justify-center text-sm border-b border-slate-800 shadow-inner">
+            <button class="toggle-btn active bg-slate-800/80 px-4 py-2 rounded-full flex items-center gap-2 font-medium" onclick="toggleDataset(0, this)" style="color: #60a5fa;">
+                <i class="fas fa-cloud"></i> עננות
+            </button>
+            <button class="toggle-btn active bg-slate-800/80 px-4 py-2 rounded-full flex items-center gap-2 font-medium" onclick="toggleDataset(1, this)" style="color: #f87171;">
+                <i class="fas fa-thermometer-half"></i> טמפ'
+            </button>
+            <button class="toggle-btn active bg-slate-800/80 px-4 py-2 rounded-full flex items-center gap-2 font-medium" onclick="toggleDataset(2, this)" style="color: #34d399;">
+                <i class="fas fa-droplet"></i> נק' טל
+            </button>
+            <button class="toggle-btn active bg-slate-800/80 px-4 py-2 rounded-full flex items-center gap-2 font-medium" onclick="toggleDataset(3, this)" style="color: #a78bfa;">
+                <i class="fas fa-wind"></i> רוח
+            </button>
+        </div>
+
+        <!-- Chart Area -->
+        <div class="flex-1 bg-slate-900 overflow-y-auto relative flex flex-col">
+            <div class="w-full overflow-x-auto no-scrollbar flex-1 flex items-center" id="chartScrollWrapper">
+                <div class="chart-container py-6 px-2 min-h-[350px]">
+                    <canvas id="hourlyCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="p-4 text-center pb-8 border-t border-slate-800/50 bg-slate-900/90 backdrop-blur">
+                <p class="text-xs text-slate-400 inline-flex items-center gap-1">
+                    <i class="fas fa-arrows-alt-h text-slate-500"></i> החלק ימינה ושמאלה לניווט בשעות
+                </p>
+                <br>
+                <p class="text-xs text-indigo-300 mt-2 font-medium inline-flex items-center gap-1 bg-indigo-900/20 px-3 py-1 rounded-full">
+                    <i class="fas fa-moon"></i> הרקע המוארך מסמן את הלילה האסטרונומי (חושך מלא)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Modal -->
+    <div id="mapModal" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col">
+        <div class="pt-10 pb-4 px-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shadow-lg">
+            <h2 class="text-lg font-bold text-white"><i class="fas fa-map-marked text-sky-400 ml-2"></i>בחר מיקום מהמפה</h2>
+            <button onclick="closeMapModal()" class="text-slate-400 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full bg-slate-700 transition-colors">&times;</button>
+        </div>
+        <div class="relative flex-1">
+            <div id="map"></div>
+            <!-- Crosshair in center of map -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-[1000]">
+                <div class="relative flex items-center justify-center">
+                    <i class="fas fa-crosshairs text-sky-500 text-4xl drop-shadow-lg opacity-80"></i>
+                    <div class="w-2 h-2 bg-red-500 rounded-full absolute shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
+                </div>
+            </div>
+            <div class="absolute bottom-4 left-0 w-full text-center pointer-events-none z-[1000]">
+                <span class="bg-slate-900/80 backdrop-blur text-white text-xs px-4 py-2 rounded-full font-medium border border-slate-700 shadow-lg">
+                    הזז את המפה למיקום הרצוי
+                </span>
+            </div>
+        </div>
+        <div class="p-6 bg-slate-800 border-t border-slate-700 space-y-4 pb-8">
+            <input type="text" id="newLocationName" placeholder="תן שם למיקום (למשל: חניון בארות)" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-4 text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all font-medium">
+            <button onclick="saveLocationFromMap()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-sky-900/50 flex justify-center items-center gap-2 text-lg">
+                <i class="fas fa-check"></i> שמור מיקום זה
+            </button>
+        </div>
+    </div>
+
+    <!-- Message Overlay (Custom Alert) -->
+    <div id="messageOverlay" class="hidden fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="messageBox">
+            <div id="messageIcon" class="text-5xl text-sky-400 mb-4 drop-shadow-md"><i class="fas fa-info-circle"></i></div>
+            <h3 id="messageTitle" class="text-xl font-bold text-white mb-2">כותרת</h3>
+            <p id="messageText" class="text-slate-300 mb-8 leading-relaxed">טקסט הודעה...</p>
+            <button onclick="closeMessage()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-colors w-full border border-slate-600 text-lg">
+                סגור
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ================= STATE & CONFIG =================
+        const defaultEquipment = {
+            telescope: 'FRA400',
+            camera: '2600mc',
+            filter: 'lultimate_e2',
+            mount: 'sal33'
+        };
+
+        const defaultLocations = [
+            { id: 1, name: 'בורות לוץ (רמון)', lat: 30.540, lon: 34.549 },
+            { id: 2, name: 'פארק תמנע', lat: 29.771, lon: 34.990 },
+            { id: 3, name: 'חניון לילה שחורת', lat: 29.620, lon: 34.945 }
+        ];
+
+        let state = {
+            equipment: JSON.parse(localStorage.getItem('astro_eq')) || defaultEquipment,
+            locations: JSON.parse(localStorage.getItem('astro_locs')) || defaultLocations,
+            activeLocationId: localStorage.getItem('astro_active_loc') || 1,
+            forecastData: null 
+        };
+
+        let map = null;
+        let chartInstance = null;
+
+        // ================= INITIALIZATION =================
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            
+            // Search Input Event Listener (Enter key)
+            document.getElementById('searchLocationInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // prevent form submit behavior
+                    searchLocation();
+                }
+            });
+        });
+
+        function initApp() {
+            // Setup Equipment UI
+            document.getElementById('eqTelescope').value = state.equipment.telescope;
+            document.getElementById('eqCamera').value = state.equipment.camera;
+            document.getElementById('eqFilter').value = state.equipment.filter;
+            document.getElementById('eqMount').value = state.equipment.mount;
+
+            renderLocationsList();
+            fetchWeatherData();
+            calculateAndDisplayBortle();
+        }
+
+        // ================= NAVIGATION =================
+        function switchTab(tabName) {
+            // Update nav styling
+            document.querySelectorAll('.bottom-nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + tabName).classList.add('active');
+
+            // Update views
+            document.querySelectorAll('main > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + tabName).classList.remove('hidden');
+            
+            // Special handling for the Wind tab to ensure the iframe loads correctly if not loaded yet
+            if (tabName === 'wind') {
+                updateWindyMap();
+            }
+
+            // Scroll to top when switching tabs
+            document.getElementById('mainContent').scrollTo(0,0);
+        }
+
+        function toggleRedMode() {
+            document.body.classList.toggle('red-mode');
+        }
+
+        function openSettings() {
+            showMessage("הגדרות", "מסך הגדרות פרופיל, העדפות התראה וגיבוי ענן יתווסף בגרסה הבאה.", "fa-cogs");
+        }
+
+        function showMessage(title, text, iconClass = "fa-info-circle") {
+            const overlay = document.getElementById('messageOverlay');
+            const box = document.getElementById('messageBox');
+            
+            document.getElementById('messageTitle').innerText = title;
+            document.getElementById('messageText').innerText = text;
+            document.getElementById('messageIcon').innerHTML = `<i class="fas ${iconClass}"></i>`;
+            
+            overlay.classList.remove('hidden');
+            // Slight delay for animation
+            setTimeout(() => {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeMessage() {
+            const overlay = document.getElementById('messageOverlay');
+            const box = document.getElementById('messageBox');
+            
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        // ================= DATA LOGIC (API) =================
+        async function fetchWeatherData() {
+            const loc = getActiveLocation();
+            if (!loc) return;
+            
+            document.getElementById('currentLocationDisplay').innerHTML = `<i class="fas fa-location-dot"></i> ${loc.name}`;
+            
+            try {
+                // Show loading state on score
+                document.getElementById('tonightScore').innerHTML = `<i class="fas fa-spinner fa-spin text-4xl"></i>`;
+                document.getElementById('tonightVerdict').innerText = "מושך נתוני אטמוספירה...";
+
+                // Fetch Daily for 7 days + current weather
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,wind_speed_10m,cloud_cover&hourly=temperature_2m,dew_point_2m&daily=weathercode,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`);
+                const data = await res.json();
+                state.forecastData = data;
+                
+                renderDailyForecast(data.daily);
+                updateCurrentStatus(data);
+                generateRecommendations();
+                
+                // If user is currently on the wind tab, update it now
+                if(!document.getElementById('view-wind').classList.contains('hidden')) {
+                    updateWindyMap();
+                }
+            } catch (error) {
+                console.error("Error fetching weather:", error);
+                document.getElementById('tonightScore').innerHTML = `<i class="fas fa-exclamation-triangle text-rose-500 text-4xl"></i>`;
+                document.getElementById('tonightVerdict').innerText = "שגיאה בחיבור לשרת מזג האוויר";
+            }
+        }
+
+        function getActiveLocation() {
+            return state.locations.find(l => l.id == state.activeLocationId) || state.locations[0];
+        }
+
+        function updateCurrentStatus(data) {
+            const current = data.current;
+            const todayForecast = data.daily.weathercode[0];
+            
+            // Calculate a score based on cloud cover (main factor for astro)
+            let score = Math.max(0, 100 - (current.cloud_cover * 1.5));
+            
+            // Penalize for high winds (>20kmh starts affecting guiding)
+            if (current.wind_speed_10m > 20) score -= 10;
+            if (current.wind_speed_10m > 40) score -= 30;
+            
+            score = Math.max(0, Math.min(100, Math.round(score)));
+            
+            // Update UI Score & Verdict
+            const scoreEl = document.getElementById('tonightScore');
+            let scoreColor = 'text-white';
+            if(score >= 80) scoreColor = 'text-emerald-400';
+            else if(score < 50) scoreColor = 'text-rose-400';
+            
+            scoreEl.innerHTML = `<span class="${scoreColor}">${score}</span><span class="text-3xl text-slate-500 font-normal">/100</span>`;
+            
+            const verdictEl = document.getElementById('tonightVerdict');
+            if (score >= 85) verdictEl.innerText = 'תנאים מעולים לצילום!';
+            else if (score >= 70) verdictEl.innerText = 'תנאים טובים, אפשר לצלם';
+            else if (score >= 50) verdictEl.innerText = 'תנאים בינוניים (חורים בעננים)';
+            else verdictEl.innerText = 'עננות כבדה - עדיף להישאר בבית';
+            
+            // Current stats
+            document.getElementById('currentCloud').innerText = `${current.cloud_cover}%`;
+            document.getElementById('currentWind').innerText = `${Math.round(current.wind_speed_10m)} km/h`;
+            
+            // Dew point logic: Get current hour dew point from hourly data
+            const currentHourStr = data.current.time.substring(0, 14) + "00"; 
+            const hourlyIndex = data.hourly.time.findIndex(t => t.startsWith(currentHourStr));
+            let dewVal = "--";
+            if(hourlyIndex !== -1 && data.hourly.dew_point_2m[hourlyIndex] !== undefined) {
+                dewVal = Math.round(data.hourly.dew_point_2m[hourlyIndex]);
+            }
+            document.getElementById('currentDew').innerText = `${dewVal}°`; 
+            
+            // Moon phase exact calculation
+            const getMoonIllumination = (date) => {
+                const LUNAR_MONTH = 29.530588853;
+                const knownNewMoon = new Date(Date.UTC(2000, 0, 6, 18, 14, 0)); 
+                const diffDays = (date.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
+                const currentCycle = diffDays / LUNAR_MONTH;
+                const phase = currentCycle - Math.floor(currentCycle);
+                
+                const illumination = (1 - Math.cos(phase * 2 * Math.PI)) / 2 * 100;
+                return Math.round(illumination);
+            };
+            document.getElementById('currentMoon').innerText = `${getMoonIllumination(new Date())}%`;
+        }
+
+        // --- Bortle Scale Calculator ---
+        function calculateAndDisplayBortle() {
+            const loc = getActiveLocation();
+            if (!loc) return;
+            
+            let bortleClass = 5; // Default suburbs
+            
+            if (loc.lat < 30.8) { 
+                bortleClass = (loc.lat > 29.5 && loc.lat < 30.6) ? 2 : 3; 
+            } else if (loc.lat > 31.8 && loc.lat < 32.3) { 
+                bortleClass = 8;
+            } else if (loc.lat > 32.5 && loc.lat < 33.0) { 
+                bortleClass = 4;
+            } else { 
+                bortleClass = 5;
+            }
+            
+            if (loc.name.includes('לוץ') || loc.name.includes('רמון')) bortleClass = 2;
+            if (loc.name.includes('שחורת') || loc.name.includes('תמנע')) bortleClass = 3;
+            if (loc.name.includes('תל אביב') || loc.name.includes('Tel Aviv')) bortleClass = 9;
+
+            const badge = document.getElementById('bortleDisplay');
+            badge.innerText = `Bortle ${bortleClass}`;
+            
+            badge.className = 'bortle-badge mr-2 transition-colors ';
+            if(bortleClass <= 2) badge.classList.add('bg-slate-900', 'text-slate-300', 'border', 'border-slate-700'); 
+            else if(bortleClass === 3) badge.classList.add('bg-blue-900', 'text-blue-200'); 
+            else if(bortleClass === 4) badge.classList.add('bg-emerald-700', 'text-emerald-100'); 
+            else if(bortleClass === 5) badge.classList.add('bg-yellow-600', 'text-yellow-100'); 
+            else if(bortleClass >= 6 && bortleClass <= 7) badge.classList.add('bg-orange-600', 'text-orange-100'); 
+            else badge.classList.add('bg-rose-100', 'text-rose-900'); 
+        }
+
+        function renderDailyForecast(daily) {
+            const container = document.getElementById('forecastList');
+            container.innerHTML = '';
+            
+            const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+            
+            for(let i=0; i<7; i++) {
+                const date = new Date(daily.time[i]);
+                const dayName = i === 0 ? 'היום' : (i === 1 ? 'מחר' : days[date.getDay()]);
+                const dateStr = `${date.getDate()}/${date.getMonth()+1}`;
+                
+                const code = daily.weathercode[i];
+                let icon = "fa-cloud";
+                let color = "text-slate-400";
+                
+                if (code <= 1) { icon = "fa-star"; color = "text-yellow-400"; } 
+                else if (code <= 3) { icon = "fa-cloud-moon"; color = "text-sky-300"; } 
+                else if (code <= 48) { icon = "fa-smog"; color = "text-slate-400"; } 
+                else if (code <= 67) { icon = "fa-cloud-rain"; color = "text-blue-400"; } 
+                else { icon = "fa-cloud-showers-heavy"; color = "text-slate-500"; } 
+
+                const el = document.createElement('div');
+                el.className = "bg-slate-800/40 border border-slate-700/50 rounded-xl p-3.5 flex justify-between items-center cursor-pointer hover:bg-slate-700/60 transition-colors";
+                el.onclick = () => openHourlyChart(daily.time[i]);
+                
+                el.innerHTML = `
+                    <div class="flex items-center gap-4 w-[40%]">
+                        <i class="fas ${icon} ${color} text-2xl w-8 text-center drop-shadow-md"></i>
+                        <div>
+                            <div class="font-bold text-white text-sm">${dayName}</div>
+                            <div class="text-xs text-slate-400 font-medium mt-0.5">${dateStr}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm font-semibold text-slate-300 text-center w-[30%]">
+                        ${Math.round(daily.temperature_2m_max[i])}° <span class="text-slate-500 text-xs font-normal mx-1">/</span> ${Math.round(daily.temperature_2m_min[i])}°
+                    </div>
+                    <div class="w-[30%] text-left flex justify-end">
+                        <button class="text-xs font-medium bg-slate-900/50 hover:bg-sky-900/50 text-sky-400 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors flex items-center gap-1">
+                            שעתי <i class="fas fa-chevron-left text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(el);
+            }
+        }
+
+        // ================= HOURLY CHART LOGIC =================
+        Chart.register(window['chartjs-plugin-annotation']);
+
+        async function openHourlyChart(dateString) {
+            document.getElementById('hourlyChartModal').classList.remove('hidden');
+            
+            const dStr = new Date(dateString).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+            document.getElementById('chartDateTitle').innerText = `(${dStr})`;
+
+            const loc = getActiveLocation();
+            
+            const startDate = dateString;
+            let nextDate = new Date(dateString);
+            nextDate.setDate(nextDate.getDate() + 1);
+            const endDate = nextDate.toISOString().split('T')[0];
+
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=temperature_2m,dew_point_2m,cloudcover,windspeed_10m&daily=sunrise,sunset&timezone=auto&start_date=${startDate}&end_date=${endDate}`);
+                const data = await res.json();
+                
+                renderChart(data, startDate);
+            } catch (err) {
+                console.error("Error loading hourly:", err);
+                showMessage("שגיאה", "לא הצלחנו לטעון את התחזית השעתית.", "fa-chart-pie");
+                closeHourlyChart();
+            }
+        }
+
+        function closeHourlyChart() {
+            document.getElementById('hourlyChartModal').classList.add('hidden');
+        }
+
+        function renderChart(data, targetDateStr) {
+            const ctx = document.getElementById('hourlyCanvas').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const startIndex = 12; 
+            const endIndex = 36;   
+
+            const labels = [];
+            const temp = [];
+            const dew = [];
+            const clouds = [];
+            const wind = [];
+            
+            for(let i=startIndex; i<=endIndex; i++) {
+                if(!data.hourly.time[i]) continue;
+                const timeString = new Date(data.hourly.time[i]).toLocaleTimeString('he-IL', {hour: '2-digit', minute:'2-digit'});
+                labels.push(timeString);
+                
+                temp.push(data.hourly.temperature_2m[i]);
+                dew.push(data.hourly.dew_point_2m[i]);
+                clouds.push(data.hourly.cloudcover[i]);
+                wind.push(data.hourly.windspeed_10m[i]);
+            }
+
+            const sunsetStr = data.daily.sunset[0];
+            const sunriseStr = data.daily.sunrise[1];
+            
+            const sunsetHour = new Date(sunsetStr).getHours();
+            const sunriseHour = new Date(sunriseStr).getHours();
+            
+            const astroStartHour = (sunsetHour + 2) % 24;
+            const astroEndHour = (sunriseHour - 2 + 24) % 24;
+
+            let shadeStartIdx = labels.findIndex(l => l.startsWith(astroStartHour.toString().padStart(2, '0')));
+            let shadeEndIdx = labels.findIndex(l => l.startsWith(astroEndHour.toString().padStart(2, '0')));
+            
+            if(shadeStartIdx === -1) shadeStartIdx = 6;
+            if(shadeEndIdx === -1) shadeEndIdx = 16;
+
+            Chart.defaults.font.family = "'Rubik', sans-serif";
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'עננות (%)',
+                            data: clouds,
+                            borderColor: 'rgba(96, 165, 250, 0.9)', 
+                            backgroundColor: 'rgba(96, 165, 250, 0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y-clouds',
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'טמפרטורה (°C)',
+                            data: temp,
+                            borderColor: 'rgba(248, 113, 113, 1)', 
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            yAxisID: 'y-temp',
+                            pointBackgroundColor: 'rgba(248, 113, 113, 1)',
+                            pointRadius: 2,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'נקודת טל (°C)',
+                            data: dew,
+                            borderColor: 'rgba(52, 211, 153, 1)', 
+                            borderDash: [5, 5],
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            yAxisID: 'y-temp',
+                            pointRadius: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'רוח (קמ"ש)',
+                            data: wind,
+                            borderColor: 'rgba(167, 139, 250, 1)', 
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            yAxisID: 'y-wind',
+                            pointStyle: 'rect',
+                            pointRadius: 3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)', 
+                            titleColor: '#38bdf8',
+                            bodySpacing: 6,
+                            padding: 12,
+                            cornerRadius: 8,
+                            boxPadding: 6,
+                            rtl: true 
+                        },
+                        annotation: {
+                            annotations: {
+                                box1: {
+                                    type: 'box',
+                                    xMin: shadeStartIdx,
+                                    xMax: shadeEndIdx,
+                                    backgroundColor: 'rgba(30, 58, 138, 0.25)', 
+                                    borderWidth: 0,
+                                    label: {
+                                        content: 'לילה אסטרונומי',
+                                        display: true, 
+                                        position: 'start', 
+                                        color: 'rgba(165, 180, 252, 0.9)', 
+                                        font: { size: 11, weight: 'bold' }, 
+                                        yAdjust: -120
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }, 
+                            ticks: { color: '#94a3b8', maxRotation: 0, font: {size: 11} } 
+                        },
+                        'y-temp': {
+                            type: 'linear', display: true, position: 'left',
+                            title: { display: true, text: 'מעלות (°C)', color: '#94a3b8', font: {size: 11} },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false }, 
+                            ticks: { color: '#f87171' }
+                        },
+                        'y-clouds': { type: 'linear', display: false, min: 0, max: 100 },
+                        'y-wind': {
+                            type: 'linear', display: true, position: 'right',
+                            title: { display: true, text: 'רוח (km/h)', color: '#94a3b8', font: {size: 11} },
+                            grid: { drawOnChartArea: false }, 
+                            ticks: { color: '#a78bfa' }
+                        }
+                    }
+                }
+            });
+
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.add('active'));
+
+            setTimeout(() => {
+                const scrollContainer = document.getElementById('chartScrollWrapper');
+                const scrollTarget = (shadeStartIdx / 24) * 1200 - (window.innerWidth / 2) + 50;
+                scrollContainer.scrollTo({ left: Math.max(0, scrollTarget), behavior: 'smooth' });
+            }, 300);
+        }
+
+        function toggleDataset(index, btnElement) {
+            if (!chartInstance) return;
+            const isVisible = chartInstance.isDatasetVisible(index);
+            if (isVisible) { chartInstance.hide(index); btnElement.classList.remove('active'); }
+            else { chartInstance.show(index); btnElement.classList.add('active'); }
+        }
+
+        // ================= WINDY MAP LOGIC =================
+        function updateWindyMap() {
+            const loc = getActiveLocation();
+            if (!loc) return;
+            
+            const iframe = document.getElementById('windyIframe');
+            // Using Windy Embed API for Cloud cover overlay
+            const windyUrl = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=6&overlay=clouds&product=ecmwf&level=surface&lat=${loc.lat}&lon=${loc.lon}&detailLat=${loc.lat}&detailLon=${loc.lon}&marker=true`;
+            
+            if (iframe.src !== windyUrl) {
+                iframe.src = windyUrl;
+            }
+        }
+
+        // ================= EQUIPMENT & LOGIC =================
+        function saveEquipment() {
+            state.equipment = {
+                telescope: document.getElementById('eqTelescope').value,
+                camera: document.getElementById('eqCamera').value,
+                filter: document.getElementById('eqFilter').value,
+                mount: document.getElementById('eqMount').value
+            };
+            localStorage.setItem('astro_eq', JSON.stringify(state.equipment));
+            generateRecommendations();
+            showMessage("נשמר בהצלחה", "הגדרות הציוד שלך התעדכנו והמטרות המומלצות חושבו מחדש.", "fa-check-circle");
+        }
+
+        function generateRecommendations() {
+            const list = document.getElementById('targetsList');
+            const eq = state.equipment;
+            
+            const month = new Date().getMonth(); 
+            const isSummer = (month >= 5 && month <= 8); 
+            
+            let targets = [];
+
+            if (eq.telescope === 'FRA400' && eq.filter.includes('lultimate')) {
+                targets = [
+                    { name: 'ערפילית הלב (IC 1805)', type: 'Emission Nebula', diff: 'קלאסי ל-FRA400', icon: 'fa-heart' },
+                    { name: 'ערפילית הנשמה (IC 1848)', type: 'Emission Nebula', diff: 'השלמה מושלמת', icon: 'fa-cloud' }
+                ];
+                if(isSummer) targets.unshift({ name: 'ערפילית הלגונה (M8)', type: 'Emission Nebula', diff: 'בהיר וקל לצילום בקיץ', icon: 'fa-water' });
+                else targets.unshift({ name: 'ערפילית הרוזטה (C49)', type: 'Emission Nebula', diff: 'מרהיב ב-Dual Band', icon: 'fa-fan' });
+
+            } else if (eq.filter === 'none' || eq.filter === 'lpro') {
+                targets = [
+                    { name: 'גלקסיית אנדרומדה (M31)', type: 'Galaxy', diff: 'מושלם ללא פילטר (Broadband)', icon: 'fa-atom' },
+                    { name: 'צביר כידון (M45)', type: 'Reflection Nebula', diff: 'דורש חושך מוחלט - ללא פילטר צר!', icon: 'fa-asterisk' },
+                    { name: 'גלקסיית המשולש (M33)', type: 'Galaxy', diff: 'אתגר נחמד', icon: 'fa-atom' }
+                ];
+            } else {
+                targets = [
+                    { name: 'ערפילית אוריון (M42)', type: 'Nebula', diff: 'המטרה למתחילים', icon: 'fa-star' },
+                    { name: 'ערפילית קליפורניה (NGC 1499)', type: 'Emission Nebula', diff: 'מעולה ל-Ha', icon: 'fa-cloud' }
+                ];
+            }
+
+            let html = '';
+            targets.forEach(t => {
+                html += `
+                    <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 flex justify-between items-center hover:bg-slate-700 transition-colors shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-sky-900/40 text-sky-400 flex items-center justify-center text-2xl">
+                                <i class="fas ${t.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-100">${t.name}</div>
+                                <div class="text-xs font-medium text-slate-400 mt-1">${t.type} • ${t.diff}</div>
+                            </div>
+                        </div>
+                        <button class="text-slate-500 hover:text-sky-400 transition p-2">
+                            <i class="fas fa-chevron-left text-lg"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        // ================= LOCATIONS & MAP =================
+        function renderLocationsList() {
+            const list = document.getElementById('locationsList');
+            document.getElementById('locationsCount').innerText = `${state.locations.length} מיקומים`;
+            list.innerHTML = '';
+            
+            const sortedLocs = [...state.locations].sort((a,b) => {
+                if(a.id == state.activeLocationId) return -1;
+                if(b.id == state.activeLocationId) return 1;
+                return 0;
+            });
+
+            sortedLocs.forEach(loc => {
+                const isActive = loc.id == state.activeLocationId;
+                const bg = isActive ? 'bg-sky-900/30 border-sky-500/50 shadow-inner' : 'bg-slate-800/60 border-slate-700/50';
+                
+                list.innerHTML += `
+                    <div class="${bg} border rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/80 transition-all mb-2" onclick="setActiveLocation(${loc.id})">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-sky-500 text-white shadow-[0_0_10px_rgba(14,165,233,0.5)]' : 'bg-slate-700 text-slate-400'}">
+                                <i class="fas ${isActive ? 'fa-map-marker-alt' : 'fa-location-arrow'}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm ${isActive ? 'text-sky-300' : 'text-slate-200'}">${loc.name}</h3>
+                                <p class="text-[11px] font-mono text-slate-400 mt-1">${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}</p>
+                            </div>
+                        </div>
+                        <div class="text-slate-500">
+                            ${isActive ? '<span class="text-xs font-bold text-sky-400 bg-sky-900/40 px-2 py-1 rounded">פעיל</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function setActiveLocation(id) {
+            state.activeLocationId = id;
+            localStorage.setItem('astro_active_loc', id);
+            renderLocationsList();
+            
+            fetchWeatherData();
+            calculateAndDisplayBortle();
+            
+            switchTab('dashboard');
+        }
+
+        // --- Global Search Logic ---
+        async function searchLocation() {
+            const query = document.getElementById('searchLocationInput').value.trim();
+            if (!query) {
+                showMessage("חסר מידע", "אנא הקלד שם עיר או אזור בתיבת החיפוש.", "fa-keyboard");
+                return;
+            }
+
+            try {
+                const btn = document.querySelector('button[onclick="searchLocation()"]');
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                btn.disabled = true;
+                
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=he&format=json`);
+                const data = await res.json();
+
+                btn.innerHTML = origText;
+                btn.disabled = false;
+
+                if (data.results && data.results.length > 0) {
+                    const result = data.results[0];
+                    const newLoc = {
+                        id: Date.now(),
+                        name: result.name + (result.country ? `, ${result.country}` : ''),
+                        lat: result.latitude,
+                        lon: result.longitude
+                    };
+
+                    state.locations.push(newLoc);
+                    localStorage.setItem('astro_locs', JSON.stringify(state.locations));
+                    
+                    document.getElementById('searchLocationInput').value = '';
+                    setActiveLocation(newLoc.id);
+                    showMessage("מיקום נוסף!", `${newLoc.name} הוסף לרשימה שלך והוגדר כמיקום הפעיל לתחזית.`, "fa-check-circle");
+                } else {
+                    showMessage("לא נמצא", "לא מצאנו את המיקום. נסה להשתמש בשם מפורש יותר או באנגלית.", "fa-search-minus");
+                }
+            } catch (error) {
+                console.error("Geocoding error:", error);
+                showMessage("שגיאת רשת", "לא הצלחנו להתחבר לשרת החיפוש. אנא בדוק את החיבור לאינטרנט.", "fa-wifi");
+                const btn = document.querySelector('button[onclick="searchLocation()"]');
+                btn.innerHTML = 'חפש';
+                btn.disabled = false;
+            }
+        }
+
+        // --- Interactive Map Modal Logic ---
+        function openMapModal() {
+            document.getElementById('mapModal').classList.remove('hidden');
+            
+            if (!map) {
+                map = L.map('map').setView([31.0461, 34.8516], 8);
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                setTimeout(() => { map.invalidateSize(); }, 200);
+            } else {
+                setTimeout(() => { map.invalidateSize(); }, 50);
+            }
+        }
+
+        function closeMapModal() {
+            document.getElementById('mapModal').classList.add('hidden');
+        }
+
+        function saveLocationFromMap() {
+            const center = map.getCenter();
+            const nameInput = document.getElementById('newLocationName').value.trim();
+            
+            if(!nameInput) {
+                showMessage("שם חסר", "כדי שתוכל לזהות את המיקום בעתיד, אנא תן לו שם (למשל 'נקודת תצפית צפון').", "fa-pen");
+                return;
+            }
+
+            const newLoc = {
+                id: Date.now(),
+                name: nameInput,
+                lat: center.lat,
+                lon: center.lng
+            };
+
+            state.locations.push(newLoc);
+            localStorage.setItem('astro_locs', JSON.stringify(state.locations));
+            
+            closeMapModal();
+            document.getElementById('newLocationName').value = '';
+            
+            setActiveLocation(newLoc.id);
+            showMessage("המיקום נשמר", `${newLoc.name} הוסף בהצלחה לרשימת המיקומים שלך.`, "fa-map-pin");
+        }
+
+    </script>
+</body>
+</html>
+
+
+
