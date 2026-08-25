@@ -37,16 +37,22 @@
             transition: filter 0.3s ease, background-color 0.3s ease;
         }
 
+        /* RTL Support for Hebrew */
         body[dir="rtl"] { font-family: 'Heebo', sans-serif; }
+        body[dir="rtl"] .ltr-override { direction: ltr; display: inline-block; }
 
         /* Astro Red Mode Filter */
-        body.red-mode { filter: sepia(100%) hue-rotate(315deg) saturate(500%) brightness(0.8) contrast(1.2); background-color: #000; }
+        body.red-mode {
+            filter: sepia(100%) hue-rotate(315deg) saturate(500%) brightness(0.8) contrast(1.2);
+            background-color: #000;
+        }
         body.red-mode iframe, body.red-mode #aladin-container, body.red-mode .leaflet-container { filter: invert(1) hue-rotate(180deg); opacity: 0.5; }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; }
+
         .nav-item { transition: all 0.2s; color: #64748b; }
         .nav-item.active { color: #38bdf8; }
 
@@ -57,16 +63,18 @@
         
         .bortle-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0.15rem 0.5rem; border-radius: 9999px; font-weight: bold; font-size: 0.65rem; white-space: nowrap; flex-shrink: 0; }
         
-        /* Compass and Altimeter UI */
-        .compass-ring { border-radius: 50%; border: 4px solid #38bdf8; position: relative; transition: transform 0.1s ease-out; }
-        .compass-tick { position: absolute; width: 2px; height: 10px; background: #64748b; top: 0; left: 50%; transform-origin: 50% 100px; }
-        .pitch-ladder { display: flex; flex-direction: column; align-items: center; gap: 20px; transition: transform 0.1s ease-out; }
-        .pitch-line { width: 60px; height: 2px; background: #38bdf8; position: relative; }
-        .pitch-line::after { content: attr(data-deg); position: absolute; left: 110%; top: -8px; font-size: 12px; color: #94a3b8; }
-        
         /* Checkbox Toggle */
         .toggle-checkbox:checked { right: 0; border-color: #38bdf8; }
         .toggle-checkbox:checked + .toggle-label { background-color: #38bdf8; }
+
+        /* Compass and Altimeter UI */
+        .compass-ring { border-radius: 50%; border: 4px solid #38bdf8; position: relative; transition: transform 0.1s ease-out; }
+        .compass-tick { position: absolute; width: 2px; height: 12px; background: #94a3b8; top: 0; left: 50%; transform-origin: 50% 80px; }
+        .compass-tick-major { width: 3px; height: 16px; background: #38bdf8; }
+        
+        .pitch-ladder { display: flex; flex-direction: column; align-items: center; gap: 30px; transition: transform 0.1s ease-out; }
+        .pitch-line { width: 60px; height: 2px; background: #38bdf8; position: relative; }
+        .pitch-line::after { content: attr(data-deg); position: absolute; left: 110%; top: -8px; font-size: 12px; color: #94a3b8; }
     </style>
 </head>
 <body class="flex flex-col h-[100dvh] overflow-hidden text-sm">
@@ -74,17 +82,18 @@
     <!-- Header -->
     <header class="pt-8 pb-3 px-5 bg-slate-900/90 backdrop-blur-md z-20 flex justify-between items-center border-b border-slate-800 shadow-md flex-shrink-0">
         <div>
-            <h1 class="text-xl font-bold text-white tracking-wide uppercase"><span data-i18n="app_title_1">ASTRO</span><span class="text-sky-400" data-i18n="app_title_2">WINDOW</span></h1>
+            <h1 class="text-xl font-bold text-white tracking-wide" data-i18n="appTitle">ASTRO<span class="text-sky-400">WINDOW</span></h1>
             <div class="text-[11px] text-slate-400 mt-1 flex flex-col gap-0.5">
                 <span class="font-medium text-slate-300"><i class="fas fa-location-dot w-3 text-sky-400"></i> <span id="locName">Detecting...</span></span>
-                <span class="font-mono text-slate-500" dir="ltr"><i class="fas fa-satellite w-3"></i> <span id="locCoordsDec">--</span></span>
+                <span class="font-mono text-slate-500 ltr-override"><i class="fas fa-satellite w-3"></i> <span id="locCoordsDec">--</span></span>
+                <span class="font-mono text-slate-500 ltr-override"><i class="fas fa-compass w-3"></i> <span id="locCoordsDms">--</span></span>
             </div>
         </div>
         <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-3">
-                <button onclick="toggleLanguage()" class="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded border border-slate-700 transition-colors" id="langBtn">HE</button>
+                <button onclick="toggleLang()" id="langToggleBtn" class="text-xs font-bold text-slate-300 hover:text-white bg-slate-800 px-2 py-1 rounded border border-slate-600 shadow-sm transition-colors">HE</button>
                 <div id="bortleDisplay" class="bortle-badge bg-slate-800 text-slate-300 border border-slate-700 shadow-sm">Bortle --</div>
-                <button onclick="toggleRedMode()" class="text-slate-400 hover:text-red-500 transition-colors text-lg" title="Red Light Mode">
+                <button onclick="toggleRedMode()" class="text-slate-400 hover:text-red-500 transition-colors text-lg" title="Toggle Red Mode">
                     <i class="fas fa-eye"></i>
                 </button>
             </div>
@@ -97,17 +106,19 @@
         
         <!-- ================= TAB 1: DASHBOARD ================= -->
         <div id="view-dashboard" class="p-4 space-y-5">
+            
             <button onclick="useCurrentLocation()" class="w-full bg-slate-800/80 hover:bg-slate-700 border border-sky-500/30 text-sky-400 font-medium py-3 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2 text-sm backdrop-blur-md">
-                <i class="fas fa-location-arrow"></i> <span data-i18n="use_current_loc">Use My Current Location</span>
+                <i class="fas fa-location-arrow"></i> <span data-i18n="btnUseGps">Use My Current Location</span>
             </button>
 
             <!-- Main Score Card -->
             <div class="glass-card p-5 relative overflow-hidden shadow-lg border-t border-t-white/10">
                 <div class="absolute -right-6 -top-6 text-8xl text-white/5"><i class="fas fa-moon"></i></div>
+                
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1" data-i18n="tonight_score">Tonight's Astro Score</h2>
-                        <div class="flex items-baseline gap-1" dir="ltr">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1" data-i18n="dashScoreTitle">Tonight's Astro Score</h2>
+                        <div class="flex items-baseline gap-1 ltr-override">
                             <span class="text-6xl font-black tracking-tighter" id="tonightScore">--</span>
                             <span class="text-xl text-slate-500 font-medium">/100</span>
                         </div>
@@ -115,70 +126,133 @@
                     <div id="scoreBadge" class="bg-slate-800 px-3 py-1 rounded-lg text-sm font-bold border border-slate-700 mt-2 shadow-inner">--</div>
                 </div>
 
-                <p class="text-slate-300 font-medium text-sm leading-relaxed mb-5 border-l-2 border-sky-500 pl-3 ltr:border-l-2 rtl:border-l-0 rtl:border-r-2 rtl:pr-3 rtl:pl-0" id="tonightSummary">
-                    <i class="fas fa-spinner fa-spin mr-2 rtl:ml-2 rtl:mr-0"></i> <span data-i18n="analyzing">Analyzing data...</span>
+                <p class="text-slate-300 font-medium text-sm leading-relaxed mb-5 border-l-2 border-sky-500 pl-3 rtl:border-r-2 rtl:border-l-0 rtl:pr-3 rtl:pl-0" id="tonightSummary">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> <span data-i18n="analyzing">Analyzing atmospheric data...</span>
                 </p>
 
                 <!-- Key Metrics Grid -->
                 <div class="grid grid-cols-4 gap-2 border-t border-white/5 pt-4">
                     <div class="text-center">
                         <i class="fas fa-cloud text-slate-400 mb-1.5 text-lg drop-shadow"></i>
-                        <div id="metricClouds" class="font-bold text-slate-200" dir="ltr">--%</div>
+                        <div id="metricClouds" class="font-bold text-slate-200 ltr-override">--%</div>
                         <div class="text-[9px] text-slate-500 uppercase mt-0.5 tracking-wider" data-i18n="clouds">Clouds</div>
                     </div>
                     <div class="text-center border-l border-white/5 rtl:border-r rtl:border-l-0">
                         <i class="fas fa-wind text-slate-400 mb-1.5 text-lg drop-shadow"></i>
-                        <div id="metricWind" class="font-bold text-slate-200" dir="ltr">--</div>
+                        <div id="metricWind" class="font-bold text-slate-200 ltr-override">--</div>
                         <div class="text-[9px] text-slate-500 uppercase mt-0.5 tracking-wider" data-i18n="wind">Wind</div>
                     </div>
                     <div class="text-center border-l border-white/5 rtl:border-r rtl:border-l-0">
                         <i class="fas fa-eye text-slate-400 mb-1.5 text-lg drop-shadow"></i>
-                        <div id="metricSeeing" class="font-bold text-slate-200" dir="ltr">--</div>
+                        <div id="metricSeeing" class="font-bold text-slate-200 ltr-override">--</div>
                         <div class="text-[9px] text-slate-500 uppercase mt-0.5 tracking-wider" data-i18n="seeing">Seeing</div>
                     </div>
                     <div class="text-center border-l border-white/5 rtl:border-r rtl:border-l-0">
                         <i class="fas fa-gem text-slate-400 mb-1.5 text-lg drop-shadow"></i>
-                        <div id="metricTrans" class="font-bold text-slate-200" dir="ltr">--</div>
-                        <div class="text-[9px] text-slate-500 uppercase mt-0.5 tracking-wider" data-i18n="transparency">Transp.</div>
+                        <div id="metricTrans" class="font-bold text-slate-200 ltr-override">--</div>
+                        <div class="text-[9px] text-slate-500 uppercase mt-0.5 tracking-wider" data-i18n="trans">Transp.</div>
                     </div>
                 </div>
             </div>
 
             <!-- Best Imaging Window -->
-            <div class="glass-card p-4 flex justify-between items-center bg-gradient-to-r from-sky-900/30 to-transparent border-l-4 border-l-sky-500 shadow-md ltr:bg-gradient-to-r rtl:bg-gradient-to-l rtl:border-l-0 rtl:border-r-4">
+            <div class="glass-card p-4 flex justify-between items-center bg-gradient-to-r from-sky-900/30 to-transparent border-l-4 border-l-sky-500 rtl:border-r-4 rtl:border-l-0 rtl:bg-gradient-to-l shadow-md">
                 <div>
-                    <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wide mb-1"><i class="fas fa-stopwatch mr-1 rtl:ml-1 rtl:mr-0"></i> <span data-i18n="best_window">Best Window</span></h3>
-                    <div class="text-xl font-bold text-white tracking-wide" id="bestWindowTime" dir="ltr">--:-- → --:--</div>
+                    <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wide mb-1"><i class="fas fa-stopwatch mr-1"></i> <span data-i18n="bestWindow">Best Window</span></h3>
+                    <div class="text-xl font-bold text-white tracking-wide ltr-override" id="bestWindowTime">--:-- → --:--</div>
                 </div>
                 <div class="text-right rtl:text-left bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
                     <div class="text-[10px] text-slate-400 mb-0.5 uppercase tracking-wider" data-i18n="duration">Duration</div>
-                    <div class="text-base font-bold text-sky-300" id="bestWindowDuration" dir="ltr">-h -m</div>
+                    <div class="text-base font-bold text-sky-300 ltr-override" id="bestWindowDuration">-h -m</div>
                 </div>
             </div>
 
-            <div class="mt-2">
-                <h3 class="font-bold text-white mb-2 px-1 text-sm tracking-wide uppercase"><i class="fas fa-calendar-alt text-sky-400 mr-2 rtl:ml-2 rtl:mr-0"></i><span data-i18n="forecast_7d">7-Day Astro Forecast</span></h3>
-                <div class="space-y-2" id="forecastList"></div>
+            <!-- Night Timeline -->
+            <div class="glass-card p-4 shadow-md">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4" data-i18n="nightTimeline">Night Timeline</h3>
+                <div class="timeline-bar mb-2 shadow-inner" id="nightTimelineBar">
+                    <div class="astro-darkness-indicator" id="darknessIndicator" style="left: 30%; width: 40%;"></div>
+                </div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-400 px-1 ltr-override w-full" id="timelineLabels">
+                    <span>18:00</span><span>00:00</span><span>06:00</span>
+                </div>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-3 mt-5 text-xs bg-slate-900/40 p-3 rounded-lg border border-slate-700/30">
+                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-1.5">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fas fa-sun text-yellow-500 w-3"></i> <span data-i18n="sunset">Sunset</span></span>
+                        <span class="font-bold text-slate-200 ltr-override" id="timeSunset">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700/50 pb-1.5">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fas fa-moon text-slate-300 w-3"></i> <span data-i18n="moonset">Moonset</span></span>
+                        <span class="font-bold text-slate-200 ltr-override" id="timeMoonset">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fas fa-star text-sky-400 w-3"></i> <span data-i18n="astroStart">Astro Start</span></span>
+                        <span class="font-bold text-slate-200 ltr-override" id="timeAstroStart">--:--</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 flex items-center gap-1.5"><i class="fas fa-star-half-stroke text-sky-400 w-3"></i> <span data-i18n="astroEnd">Astro End</span></span>
+                        <span class="font-bold text-slate-200 ltr-override" id="timeAstroEnd">--:--</span>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between bg-slate-800/80 rounded-lg p-2.5 border border-slate-600 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-sm shadow-inner" id="moonPhaseIcon">🌕</div>
+                        <span class="text-xs font-medium text-slate-300" data-i18n="moonIllum">Moon Illumination</span>
+                    </div>
+                    <span class="text-sm font-bold text-white bg-slate-900 px-2 py-1 rounded ltr-override" id="moonIllum">--%</span>
+                </div>
             </div>
+
+            <!-- 7 Days Forecast -->
+            <div class="mt-2">
+                <h3 class="font-bold text-white mb-2 px-1 text-sm tracking-wide uppercase"><i class="fas fa-calendar-alt text-sky-400 mr-2"></i><span data-i18n="forecastTitle">7-Day Astro Forecast</span></h3>
+                <div class="space-y-2" id="forecastList">
+                    <div class="text-center text-slate-500 py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Loading forecast...</div>
+                </div>
+            </div>
+            
             <div class="h-12"></div>
         </div>
 
         <!-- ================= TAB 2: TARGETS ================= -->
         <div id="view-targets" class="hidden p-4 space-y-5">
             <div class="mb-2">
-                <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="target_planner">Target Planner</h2>
-                <p class="text-xs text-slate-400 mt-1" data-i18n="target_desc">Filtered by your rig, FOV, moon phase, and Backyard Window.</p>
+                <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="targetPlannerTitle">Target Planner</h2>
+                <p class="text-xs text-slate-400 mt-1" data-i18n="targetPlannerDesc">Filtered by your FOV, moon phase, and active backyard window.</p>
             </div>
 
-            <div id="targetSuggestionsList" class="space-y-3">
-                <div class="text-center text-slate-500 text-sm py-10 glass-card"><i class="fas fa-spinner fa-spin mr-2"></i> Analyzing catalog...</div>
+            <!-- Rig Summary -->
+            <div class="bg-sky-900/20 border border-sky-800/50 rounded-xl p-3 flex justify-between items-center shadow-inner">
+                <div class="flex flex-col gap-0.5">
+                    <span class="text-[10px] text-sky-400 font-bold uppercase tracking-widest" data-i18n="activeRig">Active Rig Profile</span>
+                    <span class="text-xs text-slate-200 font-medium ltr-override" id="rigSummaryText">--mm • -- Sensor • -- Filter</span>
+                </div>
+                <button onclick="switchTab('settings')" class="text-[10px] bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded transition-colors font-bold uppercase tracking-wide" data-i18n="btnEdit">Edit</button>
+            </div>
+
+            <!-- Bookmarked Targets Container -->
+            <div id="bookmarkedContainer" class="hidden">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <i class="fas fa-bookmark text-sky-400"></i> <span data-i18n="bookmarkedTargets">Bookmarked Targets</span>
+                </h3>
+                <div id="targetBookmarkedList" class="space-y-3 mb-6"></div>
+            </div>
+
+            <!-- Suggestions Container -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <i class="fas fa-wand-magic-sparkles text-yellow-400"></i> <span data-i18n="topTargets">Top Targets Tonight</span>
+                </h3>
+                <div id="targetSuggestionsList" class="space-y-3">
+                    <div class="text-center text-slate-500 text-sm py-10 glass-card"><i class="fas fa-spinner fa-spin mr-2"></i> Analyzing catalog...</div>
+                </div>
             </div>
 
             <!-- Detailed Target Chart -->
             <div id="targetDetailCard" class="hidden glass-card p-4 mt-4 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all">
                 <div class="flex justify-between items-start mb-3">
                     <div>
-                        <h3 class="text-base font-bold text-white" id="selectedTargetName" dir="ltr">--</h3>
+                        <h3 class="text-base font-bold text-white ltr-override" id="selectedTargetName">--</h3>
                         <p class="text-[10px] text-sky-400 font-medium uppercase tracking-wider" id="selectedTargetType">--</p>
                     </div>
                     <button onclick="closeTargetDetail()" class="text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
@@ -188,53 +262,59 @@
                 
                 <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
                     <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 shadow-inner">
-                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="transit">Transit Time</div>
-                        <div class="font-bold text-slate-200 text-sm" id="targetTransit" dir="ltr">--:--</div>
+                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="transitTime">Transit Time</div>
+                        <div class="font-bold text-slate-200 text-sm ltr-override" id="targetTransit">--:--</div>
                     </div>
                     <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 shadow-inner">
-                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="max_alt">Max Altitude</div>
-                        <div class="font-bold text-slate-200 text-sm" id="targetMaxAlt" dir="ltr">--°</div>
+                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="maxAlt">Max Altitude</div>
+                        <div class="font-bold text-slate-200 text-sm ltr-override" id="targetMaxAlt">--°</div>
                     </div>
-                    <div class="bg-slate-900/60 p-2.5 rounded-lg border border-sky-900/50 shadow-inner bg-sky-950/20">
-                        <div class="text-sky-400 mb-1 text-[10px] uppercase font-bold" id="lblTargetInWindow" data-i18n="in_window">In Window</div>
-                        <div class="font-bold text-white text-sm" id="targetVisHours" dir="ltr">--h</div>
+                    <div class="bg-sky-900/40 p-2.5 rounded-lg border border-sky-700/50 shadow-inner">
+                        <div class="text-sky-300 mb-1 text-[10px] uppercase font-bold" data-i18n="inWindowTime">In Window</div>
+                        <div class="font-bold text-white text-sm ltr-override" id="targetVisHours">--h</div>
                     </div>
                     <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-700/50 shadow-inner">
-                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="apparent_size">Apparent Size</div>
-                        <div class="font-bold text-slate-200 text-sm" id="targetSize" dir="ltr">--'</div>
+                        <div class="text-slate-400 mb-1 text-[10px] uppercase" data-i18n="apparentSize">Apparent Size</div>
+                        <div class="font-bold text-slate-200 text-sm ltr-override" id="targetSize">--'</div>
                     </div>
                 </div>
 
+                <!-- ALADIN LITE FOV VIEWER -->
                 <div class="w-full border-t border-slate-700/50 pt-4 mb-4">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 text-center" data-i18n="fov_framing">Visual FOV Framing</h4>
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 text-center" data-i18n="visualFov">Visual FOV Framing</h4>
                     <div id="aladin-container" class="w-full h-[200px] rounded-lg overflow-hidden border border-slate-700/50 bg-slate-900 relative"></div>
+                    <p class="text-[9px] text-slate-500 mt-1.5 text-center" data-i18n="fovDesc">Red box indicates your camera sensor framing.</p>
                 </div>
 
-                <div class="w-full border-t border-slate-700/50 pt-4">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 text-center" data-i18n="alt_vs_time">Altitude vs Time (Tonight)</h4>
-                    <div class="w-full relative h-[250px]">
+                <!-- RESPONSIVE CHART -->
+                <div class="w-full border-t border-slate-700/50 pt-4 relative">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2 text-center" data-i18n="altVsTime">Altitude vs Time (Tonight)</h4>
+                    <div class="w-full h-[250px] relative">
                         <canvas id="targetCanvas"></canvas>
                     </div>
                 </div>
             </div>
+            
             <div class="h-12"></div>
         </div>
 
         <!-- ================= TAB 3: LIGHT POLLUTION MAP ================= -->
         <div id="view-lightmap" class="hidden p-4 space-y-4">
-            <div class="bg-slate-900/90 border-b border-slate-800 z-10 backdrop-blur shadow-md flex justify-between items-center p-4 rounded-xl">
+            <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl backdrop-blur shadow-md flex justify-between items-center">
                 <div>
-                    <h2 class="text-lg font-bold text-white"><i class="fas fa-city text-sky-400 mr-2 rtl:ml-2 rtl:mr-0"></i><span data-i18n="lp_map">Light Pollution Map</span></h2>
+                    <h2 class="text-lg font-bold text-white"><i class="fas fa-city text-sky-400 mr-2"></i><span data-i18n="navLP">Light Pollution Map</span></h2>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">External Service</p>
                 </div>
             </div>
-            <div class="bg-slate-800/50 flex flex-col items-center justify-center p-6 text-center rounded-xl border border-slate-700/50">
+            <div class="bg-slate-800/50 flex flex-col items-center justify-center p-8 text-center rounded-xl border border-slate-700/50 shadow-inner">
                 <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6 shadow-inner border border-slate-700">
                     <i class="fas fa-map-location-dot text-3xl text-sky-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2" data-i18n="interactive_map">Interactive LP Map</h3>
-                <p class="text-sm text-slate-400 mb-8 max-w-xs leading-relaxed" data-i18n="lp_desc">Due to browser restrictions, open the map in a new tab securely to view local light pollution data.</p>
+                <h3 class="text-lg font-bold text-white mb-2" data-i18n="interactiveMap">Interactive LP Map</h3>
+                <p class="text-sm text-slate-400 mb-8 max-w-xs leading-relaxed" data-i18n="lpDesc">Due to browser security restrictions from the map provider, it cannot be embedded directly inside the app. Click below to view the light pollution around your active location securely.</p>
+                
                 <a id="lightMapBtn" href="#" target="_blank" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 px-6 rounded-xl transition-colors shadow-lg shadow-sky-900/50 flex items-center gap-3">
-                    <span data-i18n="open_map">Open Map in New Tab</span> <i class="fas fa-external-link-alt"></i>
+                    <span data-i18n="btnOpenMap">Open Map in New Tab</span> <i class="fas fa-external-link-alt"></i>
                 </a>
             </div>
             <div class="h-12"></div>
@@ -242,18 +322,110 @@
 
         <!-- ================= TAB 4: PLACES ================= -->
         <div id="view-places" class="hidden p-4 space-y-4">
-            <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="places">Observing Locations</h2>
+            <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="navPlaces">Observing Locations</h2>
+            
+            <div class="space-y-2">
+                <div class="relative">
+                    <input type="text" id="searchLocationInput" placeholder="Search city or location..." 
+                        class="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-10 pr-24 rtl:pl-24 rtl:pr-10 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all shadow-inner text-sm">
+                    <i class="fas fa-search absolute left-3 rtl:right-3 rtl:left-auto top-1/2 transform -translate-y-1/2 text-slate-500"></i>
+                    <button onclick="searchLocation()" class="absolute right-1.5 rtl:left-1.5 rtl:right-auto top-1/2 transform -translate-y-1/2 bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-lg transition-colors font-medium shadow" data-i18n="btnSearch">
+                        Search
+                    </button>
+                </div>
+                
+                <button onclick="useCurrentLocation()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium py-3 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2 text-sm">
+                    <i class="fas fa-location-arrow text-sky-400"></i> <span data-i18n="btnUseGps">Use My Current GPS Location</span>
+                </button>
+            </div>
+
+            <div class="glass-card p-4">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center justify-between">
+                    <span data-i18n="addCustom">Add Custom Location</span>
+                    <button onclick="openMapModal()" class="text-sky-400 hover:text-sky-300"><i class="fas fa-map-marked-alt mr-1"></i> <span data-i18n="pickMap">Pick on Map</span></button>
+                </h3>
+                <div class="flex gap-2 mb-2">
+                    <input type="number" id="newLat" placeholder="Lat (e.g. 30.54)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner ltr-override">
+                    <input type="number" id="newLon" placeholder="Lon (e.g. 34.54)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner ltr-override">
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="newName" placeholder="Name (e.g. Dark Site)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner">
+                    <button onclick="addCustomLocation()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 rounded-lg transition-colors shadow">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mt-2 border-b border-slate-800 pb-2">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wide" data-i18n="mySavedPlaces">My Saved Places</h3>
+                <span id="locCount" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700">0</span>
+            </div>
+            
             <div id="locationsList" class="space-y-2"></div>
+            
             <div class="h-12"></div>
         </div>
 
-        <!-- ================= TAB 5: RIG & BACKYARD WINDOW ================= -->
+        <!-- ================= TAB 5: RIG / SETTINGS ================= -->
         <div id="view-settings" class="hidden p-4 space-y-5">
-            <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="rig_settings">Rig & Settings</h2>
+            <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="navRig">Rig & Settings</h2>
             
             <div class="glass-card p-5 space-y-4 border border-sky-900/30">
+                <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fas fa-telescope mr-2"></i> <span data-i18n="myEq">My Equipment</span></h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="focalLength">Focal Length (mm)</label>
+                        <input type="number" id="eqFocalLength" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner ltr-override">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="aperture">Aperture (mm)</label>
+                        <input type="number" id="eqAperture" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner ltr-override">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="sensorSize">Camera Sensor Size</label>
+                    <div class="relative">
+                        <select id="eqSensor" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 appearance-none shadow-inner">
+                            <option value="full">Full Frame (36x24mm)</option>
+                            <option value="apsc">APS-C (23.6x15.6mm)</option>
+                            <option value="m43">Micro 4/3 (17.3x13mm)</option>
+                            <option value="533">Square 1-inch (11.3x11.3mm)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 rtl:left-3 rtl:right-auto top-1/2 transform -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="primaryFilter">Primary Filter</label>
+                    <div class="relative">
+                        <select id="eqFilter" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 appearance-none shadow-inner">
+                            <option value="broadband">Broadband (None / L-Pro / UV-IR)</option>
+                            <option value="dualband">Dual-Band (L-eXtreme / ALP-T)</option>
+                            <option value="sho">Narrowband Mono (SHO / Ha)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 rtl:left-3 rtl:right-auto top-1/2 transform -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="mountStability">Mount Stability</label>
+                    <div class="relative">
+                        <select id="eqMount" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 appearance-none shadow-inner">
+                            <option value="tracker">Star Tracker (Sensitive to wind)</option>
+                            <option value="medium">Medium EQ / Harmonic (Moderate)</option>
+                            <option value="heavy">Heavy EQ Observatory (High Tolerance)</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-3 rtl:left-3 rtl:right-auto top-1/2 transform -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backyard Window Control -->
+            <div class="glass-card p-5 space-y-4 border border-sky-900/30">
                 <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2 flex items-center justify-between">
-                    <span><i class="fas fa-house-chimney-window mr-2 rtl:ml-2 rtl:mr-0"></i> <span data-i18n="backyard_window">Backyard Imaging Window</span></span>
+                    <span><i class="fas fa-house-chimney-window mr-2"></i> <span data-i18n="backyardWindow">Backyard Window</span></span>
                     
                     <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
                         <input type="checkbox" id="bwToggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer" onchange="toggleBackyardWindowUI()"/>
@@ -261,27 +433,23 @@
                     </div>
                 </h3>
                 
-                <p class="text-[10px] text-slate-400 leading-tight" data-i18n="bw_desc">Define your specific unobstructed view. Targets will only be suggested and highlighted when inside this window.</p>
+                <p class="text-[10px] text-slate-400 leading-tight" data-i18n="bwDesc">Set specific Azimuth (L/R) and Altitude (B/T) boundaries. The target planner will filter suggestions based on exactly what fits in this window.</p>
                 
                 <div id="bwControls" class="space-y-3 opacity-50 pointer-events-none transition-opacity">
                     <!-- Azimuth Row -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 shadow-inner">
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider flex justify-between">
-                                <span data-i18n="az_left">Azimuth Left</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="number" id="bwAzLeft" class="w-full bg-transparent text-white text-base font-mono focus:outline-none" placeholder="0°" dir="ltr">
-                                <button onclick="openSensorModal('azimuth', 'left')" class="bg-slate-700 text-sky-400 px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="point_btn">Point</button>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="azLeft">Az Left</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="bwAzLeft" class="w-full min-w-0 bg-transparent text-white text-base font-mono focus:outline-none" placeholder="0°" dir="ltr">
+                                <button onclick="openSensorModal('azimuth', 'left')" class="bg-slate-700 text-sky-400 px-2.5 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="btnPoint">Point</button>
                             </div>
                         </div>
                         <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 shadow-inner">
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider flex justify-between">
-                                <span data-i18n="az_right">Azimuth Right</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="number" id="bwAzRight" class="w-full bg-transparent text-white text-base font-mono focus:outline-none" placeholder="360°" dir="ltr">
-                                <button onclick="openSensorModal('azimuth', 'right')" class="bg-slate-700 text-sky-400 px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="point_btn">Point</button>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="azRight">Az Right</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="bwAzRight" class="w-full min-w-0 bg-transparent text-white text-base font-mono focus:outline-none" placeholder="360°" dir="ltr">
+                                <button onclick="openSensorModal('azimuth', 'right')" class="bg-slate-700 text-sky-400 px-2.5 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="btnPoint">Point</button>
                             </div>
                         </div>
                     </div>
@@ -289,45 +457,28 @@
                     <!-- Altitude Row -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 shadow-inner">
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider flex justify-between">
-                                <span data-i18n="alt_bottom">Alt Bottom</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="number" id="bwAltBottom" class="w-full bg-transparent text-white text-base font-mono focus:outline-none" placeholder="30°" dir="ltr">
-                                <button onclick="openSensorModal('altitude', 'bottom')" class="bg-slate-700 text-emerald-400 px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="point_btn">Point</button>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="altBottom">Alt Bottom</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="bwAltBottom" class="w-full min-w-0 bg-transparent text-white text-base font-mono focus:outline-none" placeholder="30°" dir="ltr">
+                                <button onclick="openSensorModal('altitude', 'bottom')" class="bg-slate-700 text-emerald-400 px-2.5 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="btnPoint">Point</button>
                             </div>
                         </div>
                         <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 shadow-inner">
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider flex justify-between">
-                                <span data-i18n="alt_top">Alt Top</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="number" id="bwAltTop" class="w-full bg-transparent text-white text-base font-mono focus:outline-none" placeholder="90°" dir="ltr">
-                                <button onclick="openSensorModal('altitude', 'top')" class="bg-slate-700 text-emerald-400 px-3 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="point_btn">Point</button>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="altTop">Alt Top</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="bwAltTop" class="w-full min-w-0 bg-transparent text-white text-base font-mono focus:outline-none" placeholder="90°" dir="ltr">
+                                <button onclick="openSensorModal('altitude', 'top')" class="bg-slate-700 text-emerald-400 px-2.5 py-1 rounded text-xs font-bold hover:bg-slate-600 flex-shrink-0" data-i18n="btnPoint">Point</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <button onclick="saveSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg mt-4 text-sm transition-colors shadow-lg flex items-center justify-center gap-2">
-                    <i class="fas fa-save"></i> <span data-i18n="save_profile">Save Profile & Recalculate</span>
+                    <i class="fas fa-save"></i> <span data-i18n="btnSaveProfile">Save Profile & Recalculate</span>
                 </button>
             </div>
             
-            <div class="glass-card p-5 space-y-4 border border-sky-900/30">
-                <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fas fa-telescope mr-2"></i> <span data-i18n="my_equipment">My Equipment</span></h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Focal Length (mm)</label>
-                        <input type="number" id="eqFocalLength" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none shadow-inner" dir="ltr">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Aperture (mm)</label>
-                        <input type="number" id="eqAperture" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none shadow-inner" dir="ltr">
-                    </div>
-                </div>
-            </div>
-            
+            <!-- Bottom Spacer for Scrolling -->
             <div class="h-12"></div>
         </div>
 
@@ -337,52 +488,97 @@
     <nav class="fixed bottom-0 w-full bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 flex justify-around pb-6 pt-2 px-1 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.8)]">
         <button class="nav-item active flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/80" onclick="switchTab('dashboard')" id="nav-dashboard">
             <i class="fas fa-chart-line text-lg mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="nav_dash">Dash</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="navDash">Dash</span>
         </button>
         <button class="nav-item flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/80" onclick="switchTab('targets')" id="nav-targets">
             <i class="fas fa-crosshairs text-lg mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="nav_targets">Targets</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="navTargets">Targets</span>
         </button>
         <button class="nav-item flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/80" onclick="switchTab('lightmap')" id="nav-lightmap">
             <i class="fas fa-city text-lg mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="nav_lp">LP Map</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="navLP">LP Map</span>
         </button>
         <button class="nav-item flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/80" onclick="switchTab('places')" id="nav-places">
             <i class="fas fa-map-marker-alt text-lg mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="nav_places">Places</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="navPlaces">Places</span>
         </button>
         <button class="nav-item flex-1 flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/80" onclick="switchTab('settings')" id="nav-settings">
             <i class="fas fa-sliders-h text-lg mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="nav_rig">Rig</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider" data-i18n="navRig">Rig</span>
         </button>
     </nav>
 
-    <!-- ================= SENSOR CALIBRATION MODAL ================= -->
-    <div id="sensorModal" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center p-6 backdrop-blur-sm bg-opacity-90">
+    <!-- ================= MODALS ================= -->
+
+    <!-- Map Modal for Location Picking -->
+    <div id="mapModal" class="hidden fixed inset-0 z-50 bg-slate-900 flex flex-col">
+        <div class="pt-10 pb-4 px-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shadow-lg">
+            <h2 class="text-lg font-bold text-white"><i class="fas fa-map-marked text-sky-400 mr-2"></i>Pick Location</h2>
+            <button onclick="closeMapModal()" class="text-slate-400 hover:text-white text-2xl w-10 h-10 flex items-center justify-center rounded-full bg-slate-700 transition-colors">&times;</button>
+        </div>
+        <div class="relative flex-1">
+            <div id="map"></div>
+            <!-- Crosshair -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-[1000]">
+                <div class="relative flex items-center justify-center">
+                    <i class="fas fa-crosshairs text-sky-500 text-4xl drop-shadow-lg opacity-80"></i>
+                    <div class="w-2 h-2 bg-red-500 rounded-full absolute shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
+                </div>
+            </div>
+            <div class="absolute bottom-4 left-0 w-full text-center pointer-events-none z-[1000]">
+                <span class="bg-slate-900/80 backdrop-blur text-white text-xs px-4 py-2 rounded-full font-medium border border-slate-700 shadow-lg">
+                    Pan map to desired location
+                </span>
+            </div>
+        </div>
+        <div class="p-6 bg-slate-800 border-t border-slate-700 space-y-4 pb-8 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.5)]">
+            <input type="text" id="newLocationNameMap" placeholder="Name this spot (e.g. Desert Dark Site)" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3.5 text-white focus:outline-none focus:border-sky-500 shadow-inner text-sm">
+            <button onclick="saveLocationFromMap()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg flex justify-center items-center gap-2">
+                <i class="fas fa-check"></i> Save Coordinates
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Alert / Message Modal -->
+    <div id="messageOverlay" class="hidden fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="messageBox">
+            <div id="messageIcon" class="text-5xl text-sky-400 mb-4 drop-shadow-md"><i class="fas fa-info-circle"></i></div>
+            <h3 id="messageTitle" class="text-lg font-bold text-white mb-2">Title</h3>
+            <p id="messageText" class="text-slate-300 mb-6 text-sm">Message text...</p>
+            <button onclick="closeMessage()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-8 rounded-lg transition-colors w-full border border-slate-600 text-sm">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Device Sensor Modal -->
+    <div id="sensorModal" class="hidden fixed inset-0 z-[70] bg-slate-900 flex flex-col items-center justify-center p-6 backdrop-blur-sm bg-opacity-95">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl relative">
             <button onclick="closeSensorModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl ltr:right-4 rtl:left-4 rtl:right-auto"><i class="fas fa-times"></i></button>
             
             <h3 class="text-lg font-bold text-white mb-1" id="sensorTitle">Point Device</h3>
-            <p class="text-xs text-slate-400 mb-6" id="sensorDesc">Point your phone towards the limit and hold still.</p>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase tracking-wider" id="sensorDesc">Point phone camera towards limit.</p>
             
-            <div id="sensorVisualContainer" class="w-full h-48 bg-slate-900 rounded-xl mb-6 flex items-center justify-center overflow-hidden border border-slate-700 relative shadow-inner">
+            <div id="sensorVisualContainer" class="w-full h-56 bg-slate-900 rounded-xl mb-6 flex items-center justify-center overflow-hidden border border-slate-700 relative shadow-inner">
                 <!-- Compass UI (Azimuth) -->
-                <div id="compassUI" class="hidden w-[160px] h-[160px] compass-ring flex items-center justify-center">
+                <div id="compassUI" class="hidden w-[180px] h-[180px] compass-ring flex items-center justify-center">
                     <div class="text-sky-400 font-bold text-xl relative z-10 bg-slate-900 px-3 py-1 rounded-full border border-slate-700 shadow-md">N</div>
-                    <div class="compass-tick" style="transform: rotate(0deg)"></div><div class="compass-tick" style="transform: rotate(45deg)"></div>
-                    <div class="compass-tick" style="transform: rotate(90deg)"></div><div class="compass-tick" style="transform: rotate(135deg)"></div>
-                    <div class="compass-tick" style="transform: rotate(180deg)"></div><div class="compass-tick" style="transform: rotate(225deg)"></div>
-                    <div class="compass-tick" style="transform: rotate(270deg)"></div><div class="compass-tick" style="transform: rotate(315deg)"></div>
+                    <div class="compass-tick compass-tick-major" style="transform: rotate(0deg)"></div>
+                    <div class="compass-tick" style="transform: rotate(45deg)"></div>
+                    <div class="compass-tick compass-tick-major" style="transform: rotate(90deg)"></div>
+                    <div class="compass-tick" style="transform: rotate(135deg)"></div>
+                    <div class="compass-tick compass-tick-major" style="transform: rotate(180deg)"></div>
+                    <div class="compass-tick" style="transform: rotate(225deg)"></div>
+                    <div class="compass-tick compass-tick-major" style="transform: rotate(270deg)"></div>
+                    <div class="compass-tick" style="transform: rotate(315deg)"></div>
                 </div>
                 
                 <!-- Altimeter UI (Altitude) -->
                 <div id="altimeterUI" class="hidden w-full h-full relative flex items-center justify-center">
-                    <!-- Fixed reticle in center -->
                     <div class="absolute w-full h-0.5 bg-rose-500/50 z-20 shadow-[0_0_8px_rgba(244,63,94,0.8)]"></div>
                     <div class="absolute w-4 h-4 border-2 border-rose-500 rounded-full z-20 bg-slate-900/50"></div>
-                    <!-- Moving ladder -->
                     <div id="pitchLadder" class="pitch-ladder absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div class="pitch-line" data-deg="90°"></div><div class="pitch-line" data-deg="80°"></div>
+                        <div class="pitch-line" data-deg="90° (Zenith)"></div><div class="pitch-line" data-deg="80°"></div>
                         <div class="pitch-line" data-deg="70°"></div><div class="pitch-line" data-deg="60°"></div>
                         <div class="pitch-line" data-deg="50°"></div><div class="pitch-line" data-deg="40°"></div>
                         <div class="pitch-line" data-deg="30°"></div><div class="pitch-line" data-deg="20°"></div>
@@ -391,59 +587,123 @@
                 </div>
             </div>
             
-            <div class="text-4xl font-mono font-bold text-white mb-6 tracking-wider" id="sensorLiveValue" dir="ltr">--°</div>
+            <div class="text-5xl font-mono font-bold text-white mb-6 tracking-wider ltr-override" id="sensorLiveValue">--°</div>
             
             <button onclick="captureSensorValue()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2">
-                <i class="fas fa-crosshairs"></i> <span data-i18n="capture">Set Limit</span>
+                <i class="fas fa-crosshairs"></i> <span data-i18n="btnSetLimit">Set Limit</span>
             </button>
         </div>
     </div>
 
-    <!-- Script Block -->
     <script>
-        // ================= I18N (Translations) =================
-        const translations = {
-            en: {
-                app_title_1: "ASTRO", app_title_2: "WINDOW", use_current_loc: "Use My Current Location",
-                tonight_score: "Tonight's Astro Score", analyzing: "Analyzing data...",
-                clouds: "Clouds", wind: "Wind", seeing: "Seeing", transparency: "Transp.",
-                best_window: "Best Window", duration: "Duration", forecast_7d: "7-Day Astro Forecast",
-                target_planner: "Target Planner", target_desc: "Filtered by your rig, FOV, and Backyard Window.",
-                transit: "Transit Time", max_alt: "Max Altitude", apparent_size: "Apparent Size",
-                fov_framing: "Visual FOV Framing", alt_vs_time: "Altitude vs Time (Tonight)",
-                lp_map: "Light Pollution Map", interactive_map: "Interactive LP Map",
-                lp_desc: "Due to browser restrictions, open the map in a new tab securely to view local light pollution data.",
-                open_map: "Open Map in New Tab", places: "Observing Locations",
-                rig_settings: "Rig & Settings", backyard_window: "Backyard Imaging Window",
-                bw_desc: "Define your specific unobstructed view. Targets will only be suggested and highlighted when inside this window.",
-                az_left: "Azimuth Left", az_right: "Azimuth Right", alt_bottom: "Alt Bottom", alt_top: "Alt Top",
-                point_btn: "Point", save_profile: "Save Profile & Recalculate", my_equipment: "My Equipment",
-                nav_dash: "Dash", nav_targets: "Targets", nav_lp: "LP Map", nav_places: "Places", nav_rig: "Rig",
-                capture: "Set Limit", in_window: "In Window"
-            },
-            he: {
-                app_title_1: "אסטרו-", app_title_2: "חלון", use_current_loc: "השתמש במיקום הנוכחי שלי",
-                tonight_score: "ציון אסטרו להלילה", analyzing: "מנתח נתונים...",
-                clouds: "עננים", wind: "רוח", seeing: "ראות", transparency: "שקיפות",
-                best_window: "חלון צילום מיטבי", duration: "משך", forecast_7d: "תחזית ל-7 ימים",
-                target_planner: "מתכנן מטרות", target_desc: "מסונן לפי חלון החצר והציוד שלך.",
-                transit: "זמן מעבר", max_alt: "גובה מקסימלי", apparent_size: "גודל נראה",
-                fov_framing: "שדה ראייה משוער", alt_vs_time: "גובה על פני זמן (הלילה)",
-                lp_map: "מפת זיהום אור", interactive_map: "מפה אינטראקטיבית",
-                lp_desc: "בשל מגבלות דפדפן, פתח את המפה בכרטיסייה חדשה כדי לראות נתוני זיהום אור.",
-                open_map: "פתח מפה בכרטיסייה חדשה", places: "מקומות תצפית",
-                rig_settings: "ציוד והגדרות", backyard_window: "חלון צילום חצר",
-                bw_desc: "הגדר את גבולות שדה הראייה הפנוי שלך. מטרות יוצעו רק בתוך חלון זה.",
-                az_left: "אזימוט שמאלי", az_right: "אזימוט ימני", alt_bottom: "גובה תחתון", alt_top: "גובה עליון",
-                point_btn: "כוון", save_profile: "שמור וחשב מחדש", my_equipment: "הציוד שלי",
-                nav_dash: "ראשי", nav_targets: "מטרות", nav_lp: "מפת אור", nav_places: "מקומות", nav_rig: "הגדרות",
-                capture: "קבע גבול", in_window: "בתוך החלון"
-            }
+        // ================= CONFIG & STATE =================
+        const defaultRig = { 
+            focalLength: 250, aperture: 51, sensor: 'apsc', filter: 'dualband', mount: 'medium', 
+            bw: { enabled: false, azL: 0, azR: 360, altB: 30, altT: 90 } 
         };
+        const defaultPlaces = [
+            { id: 1, name: 'Sderot, Israel', lat: 31.5235, lon: 34.5931 },
+            { id: 2, name: 'Shittim / Negev', lat: 30.015, lon: 34.966 },
+            { id: 3, name: 'Null Island', lat: 0, lon: 0 }
+        ];
+
+        let storedRig = JSON.parse(localStorage.getItem('awp_rig'));
+        if (storedRig && !storedRig.bw) {
+            // Migration from old 'horizon' system to new 'bw' system
+            storedRig.bw = defaultRig.bw; 
+            delete storedRig.horizon;
+        }
 
         let currentLang = localStorage.getItem('awp_lang') || 'en';
 
-        function toggleLanguage() {
+        let state = {
+            rig: storedRig || defaultRig,
+            places: JSON.parse(localStorage.getItem('awp_places')) || defaultPlaces,
+            activePlaceId: parseInt(localStorage.getItem('awp_active_place')) || 1,
+            bookmarkedTargets: JSON.parse(localStorage.getItem('awp_bookmarks')) || [],
+            weatherData: null,
+            astroData: null, // 7Timer API
+            astroTimes: null
+        };
+
+        const dsoCatalog = [
+            { name: "Andromeda Galaxy (M31)", type: "Galaxy", ra: 10.68, dec: 41.27, size: 190, const: "And" },
+            { name: "Orion Nebula (M42)", type: "Emission", ra: 83.82, dec: -5.39, size: 65, const: "Ori" },
+            { name: "Pleiades (M45)", type: "Reflection", ra: 56.75, dec: 24.11, size: 110, const: "Tau" },
+            { name: "Heart Nebula (IC 1805)", type: "Emission", ra: 38.28, dec: 61.45, size: 150, const: "Cas" },
+            { name: "North America (NGC 7000)", type: "Emission", ra: 314.9, dec: 44.5, size: 120, const: "Cyg" },
+            { name: "Triangulum Galaxy (M33)", type: "Galaxy", ra: 23.46, dec: 30.66, size: 70, const: "Tri" },
+            { name: "Lagoon Nebula (M8)", type: "Emission", ra: 270.9, dec: -24.38, size: 90, const: "Sgr" },
+            { name: "Veil Nebula Complex", type: "Emission", ra: 311.2, dec: 30.7, size: 180, const: "Cyg" },
+            { name: "Whirlpool Galaxy (M51)", type: "Galaxy", ra: 202.4, dec: 47.19, size: 11, const: "CVn" },
+            { name: "Rosette Nebula", type: "Emission", ra: 98.0, dec: 4.9, size: 80, const: "Mon" },
+            { name: "California Nebula (NGC 1499)", type: "Emission", ra: 60.7, dec: 36.4, size: 160, const: "Per" }
+        ];
+
+        let activeCharts = {};
+        let targetChart = null;
+        let leafletMap = null;
+        
+        Chart.register(window['chartjs-plugin-annotation']);
+
+        // ================= I18N DICTIONARY =================
+        const i18n = {
+            en: {
+                appTitle: "ASTRO<span class='text-sky-400'>WINDOW</span>",
+                navDash: "Dash", navTargets: "Targets", navLP: "LP Map", navPlaces: "Places", navRig: "Rig",
+                btnUseGps: "Use My Current Location", dashScoreTitle: "Tonight's Astro Score",
+                clouds: "Clouds", wind: "Wind", seeing: "Seeing", trans: "Transp.",
+                bestWindow: "Best Window", duration: "Duration", nightTimeline: "Night Timeline",
+                sunset: "Sunset", moonset: "Moonset", astroStart: "Astro Start", astroEnd: "Astro End", moonIllum: "Moon Illumination",
+                forecastTitle: "7-Day Astro Forecast",
+                targetPlannerTitle: "Target Planner", targetPlannerDesc: "Filtered by your FOV, moon phase, and active backyard window.",
+                activeRig: "Active Rig Profile", btnEdit: "Edit", bookmarkedTargets: "Bookmarked Targets", topTargets: "Top Targets Tonight",
+                transitTime: "Transit Time", maxAlt: "Max Altitude", inWindowTime: "In Window", apparentSize: "Apparent Size",
+                visualFov: "Visual FOV Framing", fovDesc: "Red box indicates your camera sensor framing.", altVsTime: "Altitude vs Time (Tonight)",
+                interactiveMap: "Interactive LP Map", lpDesc: "Due to browser security restrictions, click below to securely open the LP map for your location.",
+                btnOpenMap: "Open Map in New Tab", btnSearch: "Search", addCustom: "Add Custom Location", pickMap: "Pick on Map",
+                mySavedPlaces: "My Saved Places", myEq: "My Equipment", focalLength: "Focal Length (mm)", aperture: "Aperture (mm)",
+                sensorSize: "Camera Sensor Size", primaryFilter: "Primary Filter", mountStability: "Mount Stability",
+                backyardWindow: "Backyard Window", bwDesc: "Set specific Azimuth (L/R) and Altitude (B/T) boundaries. The target planner will filter suggestions based on exactly what fits in this window.",
+                azLeft: "Az Left", azRight: "Az Right", altBottom: "Alt Bottom", altTop: "Alt Top", btnPoint: "Point", btnSaveProfile: "Save Profile & Recalculate",
+                btnSetLimit: "Set Limit"
+            },
+            he: {
+                appTitle: "אסטרו-<span class='text-sky-400'>חלון</span>",
+                navDash: "ראשי", navTargets: "מטרות", navLP: "מפת אור", navPlaces: "מקומות", navRig: "הגדרות",
+                btnUseGps: "השתמש במיקום הנוכחי", dashScoreTitle: "ציון אסטרו להלילה",
+                clouds: "עננים", wind: "רוח", seeing: "ראות", trans: "שקיפות",
+                bestWindow: "חלון צילום", duration: "משך", nightTimeline: "ציר זמן",
+                sunset: "שקיעה", moonset: "שקיעת ירח", astroStart: "תחילת חושך", astroEnd: "סוף חושך", moonIllum: "הארת ירח",
+                forecastTitle: "תחזית ל-7 ימים",
+                targetPlannerTitle: "מתכנן מטרות", targetPlannerDesc: "מסונן לפי ציוד, ירח, וחלון חצר פעיל.",
+                activeRig: "פרופיל ציוד פעיל", btnEdit: "ערוך", bookmarkedTargets: "מטרות שמורות", topTargets: "מטרות מומלצות להלילה",
+                transitTime: "זמן חצייה", maxAlt: "גובה מקסימלי", inWindowTime: "בתוך החלון", apparentSize: "גודל נראה",
+                visualFov: "שדה ראייה", fovDesc: "הריבוע האדום מייצג את חיישן המצלמה שלך.", altVsTime: "גובה על פני זמן (הלילה)",
+                interactiveMap: "מפת זיהום אור", lpDesc: "לחץ לפתיחה מאובטחת של מפת זיהום האור למיקום הנוכחי שלך.",
+                btnOpenMap: "פתח מפה", btnSearch: "חפש", addCustom: "הוסף מיקום ידני", pickMap: "בחר במפה",
+                mySavedPlaces: "המיקומים שלי", myEq: "הציוד שלי", focalLength: "אורך מוקד (מ״מ)", aperture: "מפתח (מ״מ)",
+                sensorSize: "גודל חיישן", primaryFilter: "פילטר עיקרי", mountStability: "יציבות חצובה",
+                backyardWindow: "חלון צילום בחצר", bwDesc: "הגדר גבולות אזימוט וגובה. מטרות יסוננו לפי מה שנכנס בחלון זה.",
+                azLeft: "אזימוט שמאלי", azRight: "אזימוט ימני", altBottom: "גובה תחתון", altTop: "גובה עליון", btnPoint: "כוון", btnSaveProfile: "שמור וחשב מחדש",
+                btnSetLimit: "קבע גבול"
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyLanguage();
+            setInterval(updateClock, 1000);
+            updateClock();
+            initSettingsUI();
+            renderPlacesList();
+            refreshData();
+
+            document.getElementById('searchLocationInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); searchLocation(); }
+            });
+        });
+
+        function toggleLang() {
             currentLang = currentLang === 'en' ? 'he' : 'en';
             localStorage.setItem('awp_lang', currentLang);
             applyLanguage();
@@ -453,123 +713,115 @@
             document.documentElement.lang = currentLang;
             document.documentElement.dir = currentLang === 'he' ? 'rtl' : 'ltr';
             document.body.setAttribute('dir', currentLang === 'he' ? 'rtl' : 'ltr');
-            document.getElementById('langBtn').innerText = currentLang === 'en' ? 'HE' : 'EN';
+            document.getElementById('langToggleBtn').innerText = currentLang === 'en' ? 'HE' : 'EN';
             
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if(translations[currentLang][key]) el.innerText = translations[currentLang][key];
+                if(i18n[currentLang][key]) el.innerHTML = i18n[currentLang][key];
             });
-            updateDashboardUI(); // Refresh text formatting if needed
+            
+            // Re-render strings dependent on JS
+            updateDashboardUI(); 
+            generateTargetSuggestions();
+            render7DayForecast();
         }
 
-        // ================= CONFIG & STATE =================
-        const defaultRig = { 
-            focalLength: 250, aperture: 51, sensor: 'apsc', 
-            bw: { enabled: false, azL: 0, azR: 360, altB: 30, altT: 90 }
-        };
-        const defaultPlaces = [{ id: 1, name: 'Sderot, Israel', lat: 31.5235, lon: 34.5931 }];
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('headerTime').innerText = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+        }
 
-        let storedRig = JSON.parse(localStorage.getItem('awp_rig'));
-        if (storedRig && !storedRig.bw) storedRig.bw = defaultRig.bw; // Migration
+        function getActivePlace() {
+            return state.places.find(p => p.id === state.activePlaceId) || state.places[0];
+        }
 
-        let state = {
-            rig: storedRig || defaultRig,
-            places: JSON.parse(localStorage.getItem('awp_places')) || defaultPlaces,
-            activePlaceId: parseInt(localStorage.getItem('awp_active_place')) || 1,
-            weatherData: null, astroTimes: null
-        };
-
-        const dsoCatalog = [
-            { name: "Andromeda Galaxy (M31)", type: "Galaxy", ra: 10.68, dec: 41.27, size: 190, const: "And" },
-            { name: "Orion Nebula (M42)", type: "Emission", ra: 83.82, dec: -5.39, size: 65, const: "Ori" },
-            { name: "Pleiades (M45)", type: "Reflection", ra: 56.75, dec: 24.11, size: 110, const: "Tau" },
-            { name: "Heart Nebula (IC 1805)", type: "Emission", ra: 38.28, dec: 61.45, size: 150, const: "Cas" },
-            { name: "North America (NGC 7000)", type: "Emission", ra: 314.9, dec: 44.5, size: 120, const: "Cyg" },
-            { name: "Lagoon Nebula (M8)", type: "Emission", ra: 270.9, dec: -24.38, size: 90, const: "Sgr" }
-        ];
-
-        let activeCharts = {}; let targetChart = null; 
-        Chart.register(window['chartjs-plugin-annotation']);
-
-        // ================= INIT =================
-        document.addEventListener('DOMContentLoaded', () => {
-            applyLanguage();
-            initSettingsUI();
-            refreshData();
-        });
-
-        function getActivePlace() { return state.places.find(p => p.id === state.activePlaceId) || state.places[0]; }
-
+        // ================= UI & UTILS =================
         function switchTab(tab) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById('nav-' + tab).classList.add('active');
+            
             document.querySelectorAll('main > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('view-' + tab).classList.remove('hidden');
+            
             if (tab !== 'lightmap') document.getElementById('mainContent').scrollTo(0,0);
+            if (tab === 'lightmap') updateLightMap();
         }
 
         function toggleRedMode() { document.body.classList.toggle('red-mode'); }
 
-        // ================= DATA FETCHING =================
-        async function refreshData() {
+        function showMessage(title, text, iconClass = "fa-info-circle") {
+            const overlay = document.getElementById('messageOverlay');
+            const box = document.getElementById('messageBox');
+            document.getElementById('messageTitle').innerText = title;
+            document.getElementById('messageText').innerText = text;
+            document.getElementById('messageIcon').innerHTML = `<i class="fas ${iconClass}"></i>`;
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                box.classList.remove('scale-95', 'opacity-0');
+                box.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeMessage() {
+            const overlay = document.getElementById('messageOverlay');
+            const box = document.getElementById('messageBox');
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+        }
+
+        function toDMS(coordinate, isLat) {
+            const absolute = Math.abs(coordinate);
+            const degrees = Math.floor(absolute);
+            const minutesNotTruncated = (absolute - degrees) * 60;
+            const minutes = Math.floor(minutesNotTruncated);
+            const seconds = Math.floor((minutesNotTruncated - minutes) * 60);
+            const dir = coordinate >= 0 ? (isLat ? "N" : "E") : (isLat ? "S" : "W");
+            return `${degrees}° ${minutes}' ${seconds}'' ${dir}`;
+        }
+
+        function updateHeaderLocation() {
             const place = getActivePlace();
             document.getElementById('locName').innerText = place.name;
             document.getElementById('locCoordsDec').innerText = `${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`;
-            
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&hourly=temperature_2m,cloud_cover,wind_speed_10m&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=8`);
-                state.weatherData = await res.json();
-                calculateAstroTimesForDay(0);
-                updateDashboardUI();
-                generateTargetSuggestions();
-            } catch (e) {
-                console.error("API Error");
-            }
+            document.getElementById('locCoordsDms').innerText = `${toDMS(place.lat, true)}, ${toDMS(place.lon, false)}`;
+            calculateBortle(place);
         }
 
-        function calculateAstroTimesForDay(dayOffset) {
-            const place = getActivePlace(); const now = new Date();
-            let targetDate = new Date(now.getTime() + (dayOffset * 86400000));
-            if (dayOffset === 0 && now.getHours() < 12) targetDate.setDate(targetDate.getDate() - 1);
-            
-            const tonightTimes = SunCalc.getTimes(targetDate, place.lat, place.lon);
-            const nextMorningTimes = SunCalc.getTimes(new Date(targetDate.getTime() + 86400000), place.lat, place.lon);
-            state.astroTimes = {
-                targetDate: targetDate, sunset: tonightTimes.sunset,
-                astroDusk: tonightTimes.night || tonightTimes.sunset, 
-                astroDawn: nextMorningTimes.nightEnd || nextMorningTimes.sunrise,
-            };
+        function calculateBortle(loc) {
+            let bClass = 5; 
+            if (loc.lat < 30.8 && loc.lat > 0) { bClass = (loc.lat > 29.5 && loc.lat < 30.6) ? 2 : 3; } 
+            else if (loc.lat > 31.8 && loc.lat < 32.3) { bClass = 8; }
+            if (loc.name.toLowerCase().includes('negev') || loc.name.toLowerCase().includes('desert')) bClass = 2;
+            if (loc.name.toLowerCase().includes('tel aviv') || loc.name.toLowerCase().includes('london')) bClass = 9;
+
+            const badge = document.getElementById('bortleDisplay');
+            badge.innerText = `Bortle ${bClass}`;
+            badge.className = 'bortle-badge border shadow-sm transition-colors ';
+            if(bClass <= 2) badge.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-700'); 
+            else if(bClass === 3) badge.classList.add('bg-blue-900', 'text-blue-200', 'border-blue-700'); 
+            else if(bClass === 4) badge.classList.add('bg-emerald-800', 'text-emerald-200', 'border-emerald-600'); 
+            else if(bClass === 5) badge.classList.add('bg-yellow-700', 'text-yellow-100', 'border-yellow-600'); 
+            else if(bClass >= 6 && bClass <= 7) badge.classList.add('bg-orange-700', 'text-orange-100', 'border-orange-600'); 
+            else badge.classList.add('bg-rose-900', 'text-rose-200', 'border-rose-700'); 
         }
 
-        function updateDashboardUI() {
-            if (!state.weatherData) return;
-            const hr = state.weatherData.hourly;
-            let score = 100 - (hr.cloud_cover[0]*1.5);
-            score = Math.max(0, Math.min(100, Math.round(score)));
-            
-            document.getElementById('tonightScore').innerText = score;
-            document.getElementById('metricClouds').innerText = `${hr.cloud_cover[0]}%`;
-            document.getElementById('metricWind').innerText = `${Math.round(hr.wind_speed_10m[0])}`;
-            
-            let badge = score > 70 ? "Good" : (score > 40 ? "Fair" : "Poor");
-            if(currentLang === 'he') badge = score > 70 ? "טוב" : (score > 40 ? "סביר" : "גרוע");
-            document.getElementById('scoreBadge').innerText = badge;
-            
-            let sumText = currentLang === 'en' ? "Conditions analyzed successfully." : "התנאים נותחו בהצלחה.";
-            document.getElementById('tonightSummary').innerHTML = `<i class="fas fa-check-circle mr-2 text-sky-400 rtl:ml-2 rtl:mr-0"></i> ${sumText}`;
-        }
-
-        // ================= BACKYARD WINDOW SETTINGS =================
+        // ================= SETTINGS / RIG / SENSORS =================
         function initSettingsUI() {
             document.getElementById('eqFocalLength').value = state.rig.focalLength;
             document.getElementById('eqAperture').value = state.rig.aperture;
+            document.getElementById('eqSensor').value = state.rig.sensor;
+            document.getElementById('eqFilter').value = state.rig.filter;
+            document.getElementById('eqMount').value = state.rig.mount;
             
             document.getElementById('bwToggle').checked = state.rig.bw.enabled;
             document.getElementById('bwAzLeft').value = state.rig.bw.azL;
             document.getElementById('bwAzRight').value = state.rig.bw.azR;
             document.getElementById('bwAltBottom').value = state.rig.bw.altB;
             document.getElementById('bwAltTop').value = state.rig.bw.altT;
+            
             toggleBackyardWindowUI();
+            updateRigSummary();
         }
 
         function toggleBackyardWindowUI() {
@@ -583,6 +835,9 @@
             state.rig = {
                 focalLength: parseInt(document.getElementById('eqFocalLength').value) || 250,
                 aperture: parseInt(document.getElementById('eqAperture').value) || 51,
+                sensor: document.getElementById('eqSensor').value,
+                filter: document.getElementById('eqFilter').value,
+                mount: document.getElementById('eqMount').value,
                 bw: {
                     enabled: document.getElementById('bwToggle').checked,
                     azL: parseInt(document.getElementById('bwAzLeft').value) || 0,
@@ -592,11 +847,20 @@
                 }
             };
             localStorage.setItem('awp_rig', JSON.stringify(state.rig));
+            updateRigSummary();
+            calculateNightAstroScore(); 
             generateTargetSuggestions();
-            switchTab('targets'); // Auto redirect
+            showMessage("Settings Saved", "Your Rig & Backyard Window profile has been updated. Targets recalculated.", "fa-check");
+            switchTab('targets'); // Auto-switch to see results
         }
 
-        // ================= SENSOR CALIBRATION =================
+        function updateRigSummary() {
+            const sensorLabels = { 'full': 'Full Frame', 'apsc': 'APS-C', 'm43': 'Micro 4/3', '533': '1-Inch' };
+            const filterLabels = { 'broadband': 'Broadband', 'dualband': 'Dual-Band', 'sho': 'Narrowband' };
+            document.getElementById('rigSummaryText').innerText = `${state.rig.focalLength}mm • ${sensorLabels[state.rig.sensor]} • ${filterLabels[state.rig.filter]}`;
+        }
+
+        // --- SENSOR MODAL LOGIC ---
         let sensorTypeActive = ''; let sensorTargetField = '';
         let currentSensorValue = 0; let sensorListener = null;
 
@@ -604,9 +868,13 @@
             sensorTypeActive = type; sensorTargetField = target;
             document.getElementById('sensorModal').classList.remove('hidden');
             
-            const tMap = { 'left':'Azimuth Left', 'right':'Azimuth Right', 'bottom':'Alt Bottom', 'top':'Alt Top' };
-            const heMap = { 'left':'אזימוט שמאלי', 'right':'אזימוט ימני', 'bottom':'גובה תחתון', 'top':'גובה עליון' };
-            document.getElementById('sensorTitle').innerText = currentLang === 'he' ? heMap[target] : tMap[target];
+            const titles = {
+                'left': i18n[currentLang].azLeft || 'Azimuth Left', 
+                'right': i18n[currentLang].azRight || 'Azimuth Right', 
+                'bottom': i18n[currentLang].altBottom || 'Alt Bottom', 
+                'top': i18n[currentLang].altTop || 'Alt Top'
+            };
+            document.getElementById('sensorTitle').innerText = titles[target];
             
             document.getElementById('compassUI').classList.add('hidden');
             document.getElementById('altimeterUI').classList.add('hidden');
@@ -633,15 +901,13 @@
                         document.getElementById('compassUI').style.transform = `rotate(${-currentSensorValue}deg)`;
                     }
                 } else if (sensorTypeActive === 'altitude') {
-                    // Gyro Altitude (Pitch). Vertical = 0 (horizon), flat up = 90 (zenith)
+                    // Gyro Altitude. Phone vertical (beta=90) -> Alt 0. Phone flat up (beta=0) -> Alt 90.
                     if (e.beta != null) {
-                        // Normally beta=90 when holding phone upright looking at horizon.
-                        // So 90 - 90 = 0 deg. Pointing up (beta=0), 90 - 0 = 90 deg.
-                        let alt = Math.max(0, Math.min(90, Math.round(Math.abs(e.beta - 90))));
+                        let alt = Math.max(0, Math.min(90, Math.round(90 - Math.abs(e.beta))));
                         currentSensorValue = alt;
                         document.getElementById('sensorLiveValue').innerText = `${currentSensorValue}°`;
-                        // Move ladder (20px per 10 deg)
-                        let offset = (alt - 45) * 2; 
+                        // Move ladder (30px per 10 deg)
+                        let offset = (alt - 45) * 3; 
                         document.getElementById('pitchLadder').style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
                     }
                 }
@@ -663,144 +929,799 @@
             closeSensorModal();
         }
 
-        // ================= TARGET ENGINE & CHART =================
+        // ================= PLACES =================
+        function renderPlacesList() {
+            const list = document.getElementById('locationsList');
+            document.getElementById('locCount').innerText = state.places.length;
+            list.innerHTML = '';
+            
+            const sortedLocs = [...state.places].sort((a,b) => {
+                if(a.id === state.activePlaceId) return -1;
+                if(b.id === state.activePlaceId) return 1;
+                return 0;
+            });
+
+            sortedLocs.forEach(p => {
+                const isActive = p.id === state.activePlaceId;
+                list.innerHTML += `
+                    <div class="${isActive ? 'bg-sky-900/40 border-sky-500/50' : 'bg-slate-800/50 border-slate-700/50'} border rounded-xl p-3 flex justify-between items-center cursor-pointer hover:bg-slate-700/60 transition-colors" onclick="setActivePlace(${p.id})">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-sky-500 text-white shadow-[0_0_10px_rgba(14,165,233,0.5)]' : 'bg-slate-700 text-slate-400'}">
+                                <i class="fas ${isActive ? 'fa-map-marker-alt' : 'fa-location-arrow'} text-xs"></i>
+                            </div>
+                            <div class="pr-2 truncate">
+                                <h4 class="font-bold text-sm ${isActive ? 'text-sky-300' : 'text-slate-200'} truncate">${p.name}</h4>
+                                <p class="text-[9px] text-slate-500 font-mono mt-0.5 truncate ltr-override">${toDMS(p.lat, true)}, ${toDMS(p.lon, false)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0 z-10">
+                            <button onclick="openExternalMap(${p.lat}, ${p.lon}, event)" class="w-8 h-8 rounded-full bg-slate-900/80 border border-slate-700 text-slate-400 hover:text-sky-400 transition-colors flex items-center justify-center shadow-inner" title="Open in Maps">
+                                <i class="fas fa-map-location-dot"></i>
+                            </button>
+                            <button onclick="removePlace(${p.id}, event)" class="w-8 h-8 rounded-full bg-slate-900/80 border border-slate-700 text-slate-400 hover:text-rose-400 transition-colors flex items-center justify-center shadow-inner" title="Remove Place">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function removePlace(id, e) {
+            e.stopPropagation();
+            if (state.places.length <= 1) { showMessage("Cannot Remove", "You must have at least one saved location.", "fa-exclamation-triangle"); return; }
+            state.places = state.places.filter(p => p.id !== id);
+            localStorage.setItem('awp_places', JSON.stringify(state.places));
+            if (state.activePlaceId === id) setActivePlace(state.places[0].id); else renderPlacesList();
+        }
+
+        function openExternalMap(lat, lon, e) {
+            e.stopPropagation();
+            window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
+        }
+
+        function setActivePlace(id) {
+            state.activePlaceId = id;
+            localStorage.setItem('awp_active_place', id);
+            renderPlacesList();
+            refreshData();
+            switchTab('dashboard');
+        }
+
+        function addCustomLocation() {
+            const lat = parseFloat(document.getElementById('newLat').value);
+            const lon = parseFloat(document.getElementById('newLon').value);
+            let name = document.getElementById('newName').value.trim();
+            if (isNaN(lat) || isNaN(lon) || !name) { showMessage("Missing Data", "Enter valid Latitude, Longitude, and Name.", "fa-exclamation-triangle"); return; }
+            const newPlace = { id: Date.now(), name, lat, lon };
+            state.places.push(newPlace);
+            localStorage.setItem('awp_places', JSON.stringify(state.places));
+            setActivePlace(newPlace.id);
+            document.getElementById('newLat').value = ''; document.getElementById('newLon').value = ''; document.getElementById('newName').value = '';
+        }
+
+        async function searchLocation() {
+            const query = document.getElementById('searchLocationInput').value.trim();
+            if (!query) return;
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    const result = data.results[0];
+                    const newLoc = { id: Date.now(), name: result.name + (result.country ? `, ${result.country}` : ''), lat: result.latitude, lon: result.longitude };
+                    state.places.push(newLoc); localStorage.setItem('awp_places', JSON.stringify(state.places));
+                    document.getElementById('searchLocationInput').value = ''; setActivePlace(newLoc.id);
+                } else { showMessage("Not Found", "Could not find that location.", "fa-search-minus"); }
+            } catch (error) { showMessage("Network Error", "Geocoding service unavailable.", "fa-wifi"); }
+        }
+
+        function useCurrentLocation() {
+            if (navigator.geolocation) {
+                showMessage("Locating...", "Requesting GPS access from your device...", "fa-satellite-dish");
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude; const lon = position.coords.longitude;
+                    let locName = `My GPS Location`;
+                    try {
+                        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+                        const data = await res.json(); if (data.city || data.locality) locName = `${data.city || data.locality}, ${data.countryCode}`;
+                    } catch (e) {}
+                    const newPlace = { id: Date.now(), name: locName, lat, lon };
+                    state.places.push(newPlace); localStorage.setItem('awp_places', JSON.stringify(state.places));
+                    closeMessage(); setActivePlace(newPlace.id);
+                }, (error) => {
+                    closeMessage(); setTimeout(() => showMessage("GPS Error", "Could not access location.", "fa-exclamation-circle"), 350);
+                });
+            } else { showMessage("Unsupported", "Geolocation is not supported by your browser.", "fa-times-circle"); }
+        }
+
+        // ================= LEAFLET MAP MODAL =================
+        function openMapModal() {
+            document.getElementById('mapModal').classList.remove('hidden');
+            if (!leafletMap) {
+                const active = getActivePlace();
+                leafletMap = L.map('map').setView([active.lat, active.lon], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(leafletMap);
+                setTimeout(() => { leafletMap.invalidateSize(); }, 200);
+            } else { setTimeout(() => { leafletMap.invalidateSize(); }, 50); }
+        }
+        function closeMapModal() { document.getElementById('mapModal').classList.add('hidden'); }
+        function saveLocationFromMap() {
+            const center = leafletMap.getCenter();
+            const nameInput = document.getElementById('newLocationNameMap').value.trim();
+            if(!nameInput) { showMessage("Name Required", "Please provide a name.", "fa-pen"); return; }
+            const newLoc = { id: Date.now(), name: nameInput, lat: center.lat, lon: center.lng };
+            state.places.push(newLoc); localStorage.setItem('awp_places', JSON.stringify(state.places));
+            closeMapModal(); document.getElementById('newLocationNameMap').value = ''; setActivePlace(newLoc.id);
+        }
+
+        // ================= LIGHT POLLUTION MAP =================
+        function updateLightMap() {
+            const loc = getActivePlace();
+            const a = document.getElementById('lightMapBtn');
+            a.href = `https://lightpollutionmap.app/?lat=${loc.lat}&lng=${loc.lon}&zoom=8`;
+        }
+
+        // ================= DATA FETCHING =================
+        async function refreshData() {
+            updateHeaderLocation();
+            const place = getActivePlace();
+            
+            try {
+                // 1. Open-Meteo
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=8`;
+                const res = await fetch(url);
+                state.weatherData = await res.json();
+
+                // 2. 7Timer API (Real Seeing/Transp)
+                try {
+                    const timerUrl = `https://www.7timer.info/bin/astro.php?lon=${place.lon}&lat=${place.lat}&ac=0&unit=metric&output=json&tzshift=0`;
+                    const tRes = await fetch(timerUrl);
+                    const tData = await tRes.json();
+                    state.astroData = tData.dataseries;
+                } catch(e) {
+                    console.log("7Timer API Unavailable, falling back to estimations.");
+                    state.astroData = null;
+                }
+
+                calculateAstroTimesForDay(0);
+                updateDashboardUI();
+                render7DayForecast();
+                generateTargetSuggestions();
+                if(!document.getElementById('view-lightmap').classList.contains('hidden')) updateLightMap();
+
+            } catch (e) {
+                console.error("Error fetching data:", e);
+                document.getElementById('tonightScore').innerText = "ERR";
+                document.getElementById('tonightSummary').innerText = "Failed to load weather data.";
+            }
+        }
+
+        function calculateAstroTimesForDay(dayOffset) {
+            const place = getActivePlace();
+            const now = new Date();
+            let targetDate = new Date(now.getTime() + (dayOffset * 86400000));
+            if (dayOffset === 0 && now.getHours() < 12) targetDate.setDate(targetDate.getDate() - 1);
+            
+            const tonightTimes = SunCalc.getTimes(targetDate, place.lat, place.lon);
+            const nextMorningTimes = SunCalc.getTimes(new Date(targetDate.getTime() + 86400000), place.lat, place.lon);
+            const moonParams = SunCalc.getMoonIllumination(now);
+            const moonTimes = SunCalc.getMoonTimes(targetDate, place.lat, place.lon);
+            
+            state.astroTimes = {
+                targetDate: targetDate,
+                sunset: tonightTimes.sunset,
+                sunrise: nextMorningTimes.sunrise,
+                astroDusk: tonightTimes.night || tonightTimes.sunset, 
+                astroDawn: nextMorningTimes.nightEnd || nextMorningTimes.sunrise,
+                moonset: moonTimes.set,
+                moonPhase: moonParams.phase,
+                moonIllum: moonParams.fraction
+            };
+        }
+
+        // ================= SCORING & DASHBOARD =================
+        function calculateNightAstroScore(dayOffset = 0) {
+            if (!state.weatherData || !state.astroTimes) return null;
+            
+            const hourly = state.weatherData.hourly;
+            const rig = state.rig;
+            let windThresh = (rig.mount === 'tracker') ? 12 : (rig.mount === 'heavy' ? 30 : 20);
+
+            const dusk = state.astroTimes.astroDusk;
+            const dawn = state.astroTimes.astroDawn;
+            if (isNaN(dusk) || isNaN(dawn)) return { score: 0, msg: "No True Darkness", nightScores: [] };
+
+            let totalAstroHours = 0;
+            let nightScores = [];
+            let currentWindowStart = null;
+            let bestStart = null;
+            let bestEnd = null;
+
+            for (let i = 0; i < hourly.time.length; i++) {
+                const t = new Date(hourly.time[i]);
+                if (t >= dusk && t <= dawn) {
+                    totalAstroHours++;
+                    const cloud = hourly.cloud_cover[i];
+                    const wind = hourly.wind_speed_10m[i];
+                    const dewGap = hourly.temperature_2m[i] - hourly.dew_point_2m[i];
+                    
+                    const moonPos = SunCalc.getMoonPosition(t, getActivePlace().lat, getActivePlace().lon);
+                    let moonPenalty = 0;
+                    if (moonPos.altitude > 0) {
+                        let base = state.astroTimes.moonIllum * 100;
+                        if (rig.filter === 'broadband') moonPenalty = base * 0.8;
+                        else if (rig.filter === 'dualband') moonPenalty = base * 0.3;
+                        else if (rig.filter === 'sho') moonPenalty = base * 0.1;
+                    }
+
+                    let score = 100;
+                    score -= (cloud * 1.5);
+                    if (wind > windThresh) score -= ((wind - windThresh) * 2);
+                    score -= moonPenalty;
+                    score = Math.max(0, Math.min(100, Math.round(score)));
+                    
+                    nightScores.push({ time: t, score, cloud, wind, dewGap });
+                    
+                    if (score > 60) {
+                        if(!currentWindowStart) currentWindowStart = t;
+                        bestEnd = t;
+                    } else {
+                        if (currentWindowStart) {
+                            let duration = bestEnd.getTime() - currentWindowStart.getTime();
+                            if (!bestStart || duration > (bestEnd.getTime() - bestStart.getTime())) bestStart = currentWindowStart;
+                            currentWindowStart = null;
+                        }
+                    }
+                }
+            }
+            
+            if(currentWindowStart) {
+                let duration = bestEnd.getTime() - currentWindowStart.getTime();
+                if (!bestStart || duration > (bestEnd.getTime() - bestStart.getTime())) bestStart = currentWindowStart;
+            }
+
+            if (nightScores.length === 0) return { score: 0, msg: "No Data", nightScores: [] };
+
+            let sorted = [...nightScores].sort((a,b) => b.score - a.score);
+            let top = sorted.slice(0, Math.max(1, Math.ceil(totalAstroHours * 0.7)));
+            let finalScore = Math.round(top.reduce((sum, h) => sum + h.score, 0) / top.length);
+            
+            return { score: finalScore, bestStart, bestEnd, nightScores, topScores: top };
+        }
+
+        function updateDashboardUI() {
+            const res = calculateNightAstroScore(0);
+            if (!res) return;
+
+            const { score, bestStart, bestEnd, nightScores } = res;
+            const scoreEl = document.getElementById('tonightScore');
+            const badgeEl = document.getElementById('scoreBadge');
+            
+            scoreEl.innerText = score;
+            if (score >= 80) { scoreEl.className = "text-6xl font-black tracking-tighter text-emerald-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-emerald-900/50 text-emerald-300 border border-emerald-700 shadow-inner"; badgeEl.innerText = currentLang==='he'?"מצוין":"Excellent"; }
+            else if (score >= 60) { scoreEl.className = "text-6xl font-black tracking-tighter text-sky-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-sky-900/50 text-sky-300 border border-sky-700 shadow-inner"; badgeEl.innerText = currentLang==='he'?"טוב":"Good"; }
+            else if (score >= 40) { scoreEl.className = "text-6xl font-black tracking-tighter text-yellow-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-yellow-900/50 text-yellow-300 border border-yellow-700 shadow-inner"; badgeEl.innerText = currentLang==='he'?"סביר":"Marginal"; }
+            else { scoreEl.className = "text-6xl font-black tracking-tighter text-rose-500"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-rose-900/50 text-rose-300 border border-rose-700 shadow-inner"; badgeEl.innerText = currentLang==='he'?"גרוע":"Poor"; }
+
+            let repHour = nightScores.find(h => h.time.getHours() >= 21) || nightScores[0];
+            
+            let seeingUI = "3/5"; let transUI = "3/5";
+            let seeingLabel = "Seeing (Est)"; let transLabel = "Transp. (Est)";
+            
+            if (state.astroData && state.astroData.length > 0) {
+                let seeAvg = 0, trAvg = 0, c = 0;
+                for(let i=0; i<4 && i<state.astroData.length; i++) {
+                    seeAvg += state.astroData[i].seeing;
+                    trAvg += state.astroData[i].transparency;
+                    c++;
+                }
+                seeAvg /= c; trAvg /= c;
+                
+                const toFive = (val) => {
+                    if(val <= 2.5) return "5/5"; if(val <= 4.5) return "4/5";
+                    if(val <= 5.5) return "3/5"; if(val <= 7.5) return "2/5"; return "1/5";
+                };
+                seeingUI = toFive(seeAvg); transUI = toFive(trAvg);
+                seeingLabel = "Seeing (API)"; transLabel = "Transp. (API)";
+            } else if (repHour) {
+                seeingUI = repHour.wind < 10 ? "4/5" : (repHour.wind > 20 ? "2/5" : "3/5");
+                transUI = repHour.cloud < 10 ? "4/5" : "2/5";
+            }
+
+            if (repHour) {
+                document.getElementById('metricClouds').innerText = `${repHour.cloud}%`;
+                document.getElementById('metricWind').innerText = `${Math.round(repHour.wind)}`;
+            }
+            
+            document.getElementById('metricSeeing').innerText = seeingUI;
+            document.getElementById('metricSeeing').nextElementSibling.innerText = seeingLabel;
+            document.getElementById('metricTrans').innerText = transUI;
+            document.getElementById('metricTrans').nextElementSibling.innerText = transLabel;
+
+            if (bestStart && bestEnd && score > 30) {
+                let fmt = {hour: '2-digit', minute:'2-digit'};
+                document.getElementById('bestWindowTime').innerText = `${bestStart.toLocaleTimeString('en-GB', fmt)} → ${bestEnd.toLocaleTimeString('en-GB', fmt)}`;
+                let diffHours = (bestEnd - bestStart) / 3600000;
+                document.getElementById('bestWindowDuration').innerText = `${Math.floor(diffHours)}h ${Math.round((diffHours%1)*60)}m`;
+            } else {
+                document.getElementById('bestWindowTime').innerText = "None Tonight";
+                document.getElementById('bestWindowDuration').innerText = "0h 0m";
+            }
+
+            let sumTxt = "";
+            if (score >= 70) sumTxt = `Clear skies with manageable wind. `;
+            else if (score >= 40) sumTxt = `Mixed conditions. Watch out for passing clouds. `;
+            else sumTxt = "Heavy cloud cover or severe wind tonight. Avoid imaging. ";
+            if(repHour && repHour.dewGap < 2) sumTxt += "High dew risk. ";
+            if (state.astroTimes.moonIllum > 0.5 && state.astroTimes.moonset && state.astroTimes.moonset > state.astroTimes.astroDusk) {
+                if (state.rig.filter === 'broadband') sumTxt += `Bright Moon (${Math.round(state.astroTimes.moonIllum*100)}%) limits broadband imaging.`;
+            }
+            document.getElementById('tonightSummary').innerHTML = `<i class="fas fa-info-circle text-sky-400 mr-1 rtl:ml-1 rtl:mr-0"></i> ${sumTxt}`;
+
+            const fmt = {hour: '2-digit', minute:'2-digit'};
+            document.getElementById('timeSunset').innerText = state.astroTimes.sunset.toLocaleTimeString('en-GB', fmt);
+            document.getElementById('timeAstroStart').innerText = state.astroTimes.astroDusk.toLocaleTimeString('en-GB', fmt);
+            document.getElementById('timeAstroEnd').innerText = state.astroTimes.astroDawn.toLocaleTimeString('en-GB', fmt);
+            document.getElementById('timeMoonset').innerText = state.astroTimes.moonset ? state.astroTimes.moonset.toLocaleTimeString('en-GB', fmt) : "Doesn't set";
+            document.getElementById('moonIllum').innerText = `${Math.round(state.astroTimes.moonIllum * 100)}%`;
+            
+            const barStart = new Date(state.astroTimes.sunset);
+            barStart.setHours(18, 0, 0, 0); 
+            const barEnd = new Date(barStart);
+            barEnd.setHours(barStart.getHours() + 14); 
+            const totalMs = barEnd - barStart;
+            const duskPct = ((state.astroTimes.astroDusk - barStart) / totalMs) * 100;
+            const dawnPct = ((state.astroTimes.astroDawn - barStart) / totalMs) * 100;
+            const indicator = document.getElementById('darknessIndicator');
+            indicator.style.left = `${Math.max(0, duskPct)}%`;
+            indicator.style.width = `${Math.max(0, dawnPct - Math.max(0, duskPct))}%`;
+        }
+
+        function render7DayForecast() {
+            if(!state.weatherData || !state.weatherData.daily) return;
+            const container = document.getElementById('forecastList');
+            container.innerHTML = '';
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const daily = state.weatherData.daily;
+
+            for(let i=0; i<7; i++) {
+                calculateAstroTimesForDay(i);
+                const res = calculateNightAstroScore(i);
+                let score = res ? res.score : 0;
+                
+                const dDate = new Date(daily.time[i]);
+                const dayName = i === 0 ? 'Today' : (i === 1 ? 'Tmw' : days[dDate.getDay()]);
+                const code = daily.weathercode[i];
+                let icon = "fa-cloud"; let color = "text-slate-400";
+                
+                if (code <= 1) { icon = "fa-star"; color = "text-yellow-400"; } 
+                else if (code <= 3) { icon = "fa-cloud-moon"; color = "text-sky-300"; } 
+                else if (code <= 67) { icon = "fa-cloud-rain"; color = "text-blue-400"; } 
+
+                let sColor = 'text-white';
+                if(score >= 80) sColor = 'text-emerald-400 font-bold';
+                else if(score < 50) sColor = 'text-rose-400';
+
+                let miniCloud = "--%", miniWind = "--", miniDew = "--", windowText = "None";
+                if (res && res.nightScores && res.nightScores.length > 0) {
+                    let repHour = res.nightScores.find(h => h.time.getHours() >= 21) || res.nightScores[0];
+                    miniCloud = `${repHour.cloud}%`;
+                    miniWind = `${Math.round(repHour.wind)}`;
+                    miniDew = repHour.dewGap < 2 ? "High" : (repHour.dewGap < 4 ? "Mod" : "Low");
+                    if (res.bestStart && res.bestEnd && score > 30) {
+                        let fmt = {hour: '2-digit', minute:'2-digit'};
+                        windowText = `${res.bestStart.toLocaleTimeString('en-GB', fmt)} - ${res.bestEnd.toLocaleTimeString('en-GB', fmt)}`;
+                    }
+                }
+
+                calculateAstroTimesForDay(0); // Reset after loop
+
+                container.innerHTML += `
+                    <div class="relative mb-2">
+                        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-3 flex justify-between items-center cursor-pointer hover:bg-slate-700/60 transition-colors shadow-sm relative z-10" onclick="toggleForecastChart(${i})">
+                            <div class="flex items-center gap-4 w-[40%]">
+                                <i class="fas ${icon} ${color} text-xl w-6 text-center drop-shadow-md"></i>
+                                <div>
+                                    <div class="font-bold text-slate-200 text-sm ltr-override">${dayName}</div>
+                                    <div class="text-[9px] text-slate-400 font-medium uppercase ltr-override">${dDate.getDate()}/${dDate.getMonth()+1}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm font-semibold text-slate-300 text-center w-[30%] ltr-override">
+                                ${Math.round(daily.temperature_2m_max[i])}° <span class="text-slate-500 font-normal">/</span> ${Math.round(daily.temperature_2m_min[i])}°
+                            </div>
+                            <div class="w-[30%] text-right flex items-center justify-end gap-3 ltr-override">
+                                <span class="${sColor} text-sm">${score}</span>
+                                <i class="fas fa-chevron-down text-slate-500 transition-transform duration-300" id="chevron-${i}"></i>
+                            </div>
+                        </div>
+                        
+                        <div id="forecast-detail-${i}" class="hidden forecast-detail flex-col bg-slate-900/80 border border-slate-700/50 rounded-b-xl -mt-3 pt-5 pb-3 px-2 shadow-inner">
+                            ${i !== 0 ? `
+                            <div class="grid grid-cols-4 gap-1 mb-2 text-center border-b border-slate-700/50 pb-2">
+                                <div><div class="text-[9px] text-slate-500 uppercase">Clouds</div><div class="font-bold text-slate-200 text-xs ltr-override">${miniCloud}</div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Wind</div><div class="font-bold text-slate-200 text-xs ltr-override">${miniWind} <span class="text-[9px] font-normal text-slate-400">km/h</span></div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Dew</div><div class="font-bold text-slate-200 text-xs">${miniDew}</div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Window</div><div class="font-bold text-sky-400 text-[10px] whitespace-nowrap ltr-override">${windowText}</div></div>
+                            </div>
+                            ` : ''}
+                            <div class="w-full h-[160px] relative mt-1">
+                                <canvas id="canvas-forecast-${i}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function toggleForecastChart(dayOffset) {
+            const detailDiv = document.getElementById(`forecast-detail-${dayOffset}`);
+            const chevron = document.getElementById(`chevron-${dayOffset}`);
+            const isHidden = detailDiv.classList.contains('hidden');
+            
+            document.querySelectorAll('.forecast-detail').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="chevron-"]').forEach(el => el.style.transform = 'rotate(0deg)');
+            
+            if (isHidden) {
+                detailDiv.classList.remove('hidden');
+                chevron.style.transform = 'rotate(180deg)';
+                renderMiniChart(dayOffset);
+                setTimeout(() => { 
+                    const mainContent = document.getElementById('mainContent');
+                    const rect = detailDiv.getBoundingClientRect();
+                    const mainRect = mainContent.getBoundingClientRect();
+                    if (rect.bottom > mainRect.bottom) {
+                        mainContent.scrollBy({ top: (rect.bottom - mainRect.bottom) + 80, behavior: 'smooth' });
+                    }
+                }, 50);
+            }
+        }
+
+        function renderMiniChart(dayOffset) {
+            calculateAstroTimesForDay(dayOffset);
+            
+            let startT = new Date(state.astroTimes.astroDusk); 
+            if (isNaN(startT)) startT = new Date(state.astroTimes.sunset);
+            if (isNaN(startT)) { startT = new Date(state.astroTimes.targetDate); startT.setHours(16,0,0,0); }
+            else { startT.setHours(startT.getHours() - 1); }
+
+            let endT = new Date(state.astroTimes.astroDawn); 
+            if (isNaN(endT)) endT = new Date(state.astroTimes.sunrise);
+            if (isNaN(endT)) { endT = new Date(state.astroTimes.targetDate.getTime() + 86400000); endT.setHours(8,0,0,0); }
+            else { endT.setHours(endT.getHours() + 1); }
+            
+            const hourlyRaw = state.weatherData.hourly;
+            const labels = []; const clouds = []; const temps = []; const winds = [];
+            let astroStartIndex = -1; let astroEndIndex = -1;
+
+            for(let i=0; i<hourlyRaw.time.length; i++) {
+                const t = new Date(hourlyRaw.time[i]);
+                if(t >= startT && t <= endT) {
+                    labels.push(t.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
+                    clouds.push(hourlyRaw.cloud_cover[i]);
+                    temps.push(hourlyRaw.temperature_2m[i]);
+                    winds.push(hourlyRaw.wind_speed_10m[i]);
+                    
+                    if (t.getTime() === state.astroTimes.astroDusk.getTime() || (t > state.astroTimes.astroDusk && astroStartIndex===-1)) astroStartIndex = labels.length - 1;
+                    if (t.getTime() === state.astroTimes.astroDawn.getTime() || (t > state.astroTimes.astroDawn && astroEndIndex===-1)) astroEndIndex = labels.length - 1;
+                }
+            }
+            if(astroStartIndex === -1) astroStartIndex = 1;
+            if(astroEndIndex === -1) astroEndIndex = labels.length - 2;
+
+            const canvasId = `canvas-forecast-${dayOffset}`;
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if (activeCharts[dayOffset]) activeCharts[dayOffset].destroy();
+            
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            activeCharts[dayOffset] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Clouds (%)', data: clouds, borderColor: 'rgba(96, 165, 250, 0.9)', backgroundColor: 'rgba(96, 165, 250, 0.15)', fill: true, tension: 0.4, yAxisID: 'y', borderWidth: 2, pointRadius: 0 },
+                        { label: 'Temp (°C)', data: temps, borderColor: 'rgba(248, 113, 113, 1)', backgroundColor: 'transparent', tension: 0.4, yAxisID: 'y1', borderWidth: 2, pointRadius: 0 },
+                        { label: 'Wind (km/h)', data: winds, borderColor: 'rgba(167, 139, 250, 1)', borderDash: [4, 4], backgroundColor: 'transparent', tension: 0.4, yAxisID: 'y', borderWidth: 1.5, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    plugins: { 
+                        legend: { display: true, position: 'bottom', labels: {color: '#94a3b8', boxWidth: 10, font:{size: 10}} },
+                        annotation: { annotations: { box1: { type: 'box', xMin: astroStartIndex, xMax: astroEndIndex, backgroundColor: 'rgba(30, 58, 138, 0.25)', borderWidth: 0 } } }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: {size: 10}, maxTicksLimit: 8 } },
+                        y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' }, display: false },
+                        y1: { position: 'right', grid: { drawOnChartArea: false }, display: false }
+                    }
+                }
+            });
+            calculateAstroTimesForDay(0); // Restore
+        }
+
+        // ================= TARGET SUGGESTION ENGINE & FOV =================
+        function getSensorDimensions(sensorType) {
+            switch(sensorType) {
+                case 'full': return { w: 36, h: 24 };
+                case 'apsc': return { w: 23.6, h: 15.6 };
+                case 'm43': return { w: 17.3, h: 13 };
+                case '533': return { w: 11.3, h: 11.3 };
+                default: return { w: 23.6, h: 15.6 };
+            }
+        }
         function getGMST(date) {
             const jd = date.getTime() / 86400000.0 + 2440587.5;
             const d = jd - 2451545.0; 
-            return ((280.46061837 + 360.98564736629 * d) % 360 + 360) % 360;
+            let gmst = 280.46061837 + 360.98564736629 * d;
+            return (gmst % 360 + 360) % 360;
         }
         
         function getAzAlt(date, lat, lon, raDeg, decDeg) {
-            const gmst = getGMST(date); const lst = (gmst + lon) % 360;
-            let ha = (lst - raDeg) * Math.PI / 180; ha = Math.atan2(Math.sin(ha), Math.cos(ha)); 
-            const dec = decDeg * Math.PI / 180; const phi = lat * Math.PI / 180;
+            const gmst = getGMST(date);
+            const lst = (gmst + lon) % 360;
+            let ha = (lst - raDeg) * Math.PI / 180;
+            ha = Math.atan2(Math.sin(ha), Math.cos(ha)); 
+            
+            const dec = decDeg * Math.PI / 180;
+            const phi = lat * Math.PI / 180;
+
             const sinAlt = Math.sin(dec) * Math.sin(phi) + Math.cos(dec) * Math.cos(phi) * Math.cos(ha);
             const alt = Math.asin(sinAlt);
+
             const cosAz = (Math.sin(dec) - Math.sin(alt) * Math.sin(phi)) / (Math.cos(alt) * Math.cos(phi));
-            let az = Math.acos(Math.max(-1, Math.min(1, cosAz))); 
+            let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
             if (Math.sin(ha) > 0) az = 2 * Math.PI - az;
+
             return { alt: alt * 180 / Math.PI, az: az * 180 / Math.PI };
         }
 
+        // Check if object is inside the active Backyard Window limits
         function isTargetInWindow(az, alt) {
             const bw = state.rig.bw;
-            if (!bw.enabled) return alt >= 30; // Default limit
+            if (!bw.enabled) return alt >= 30; // Fallback hard limit
             
             let altOk = (alt >= bw.altB && alt <= bw.altT);
             let azOk = false;
-            if (bw.azL <= bw.azR) { azOk = (az >= bw.azL && az <= bw.azR); } 
-            else { azOk = (az >= bw.azL || az <= bw.azR); } // Crosses North
+            
+            if (bw.azL <= bw.azR) {
+                azOk = (az >= bw.azL && az <= bw.azR);
+            } else {
+                // Crosses North (e.g. Left 300, Right 60)
+                azOk = (az >= bw.azL || az <= bw.azR);
+            }
             
             return altOk && azOk;
         }
 
+        function toggleBookmark(targetName, e) {
+            e.stopPropagation(); 
+            let bookmarks = state.bookmarkedTargets || [];
+            if (bookmarks.includes(targetName)) bookmarks = bookmarks.filter(n => n !== targetName);
+            else bookmarks.push(targetName);
+            state.bookmarkedTargets = bookmarks;
+            localStorage.setItem('awp_bookmarks', JSON.stringify(bookmarks));
+            generateTargetSuggestions();
+        }
+
         function generateTargetSuggestions() {
             if (!state.astroTimes) return;
+            const rig = state.rig;
             const place = getActivePlace();
+            const sensor = getSensorDimensions(rig.sensor);
+            
+            const fovW = 2 * Math.atan(sensor.w / (2 * rig.focalLength)) * (180 / Math.PI) * 60;
+            const fovH = 2 * Math.atan(sensor.h / (2 * rig.focalLength)) * (180 / Math.PI) * 60;
+            const fovMin = Math.min(fovW, fovH);
+            const fovMax = Math.max(fovW, fovH);
+
+            let bookmarkedList = [];
             let suggestedList = [];
 
-            const lblInWin = currentLang === 'he' ? "בתוך החלון" : "In Window";
-            document.getElementById('lblTargetInWindow').innerText = state.rig.bw.enabled ? lblInWin : (currentLang==='he'?"מעל 30°":"Visible >30°");
-
             dsoCatalog.forEach(target => {
-                let hoursInWindow = 0; let maxAlt = 0;
+                let score = 100;
+                let msg = "";
+
+                if (target.size > fovMin * 1.3) { score = 0; msg = "Too large"; }
+                else if (target.size < fovMax * 0.03) { score = 0; msg = "Too small"; }
+                else if (target.size > fovMin * 0.9) score -= 10; 
+                else if (target.size < fovMax * 0.1) score -= 15; 
+
+                const isMoonBright = state.astroTimes.moonIllum > 0.6; 
+                if (rig.filter === 'sho' && target.type !== 'Emission' && target.type !== 'Planetary') { score = 0; msg = "Needs Broadband"; }
+                if (rig.filter === 'broadband' && target.type === 'Emission' && isMoonBright) score -= 30; 
+                if (target.type === 'Galaxy' || target.type === 'Reflection') {
+                    if (rig.filter === 'dualband' || rig.filter === 'sho') { score = 0; msg = "Needs Broadband"; }
+                    if (isMoonBright) score -= 40; 
+                }
+
+                let hoursInWindow = 0;
+                let maxAlt = 0;
                 let currentT = new Date(state.astroTimes.astroDusk.getTime());
                 const endTime = state.astroTimes.astroDawn.getTime();
                 
-                while (currentT.getTime() < endTime) {
-                    const { alt, az } = getAzAlt(currentT, place.lat, place.lon, target.ra, target.dec);
-                    if (alt > maxAlt) maxAlt = alt;
-                    if (isTargetInWindow(az, alt)) hoursInWindow += 0.5;
-                    currentT = new Date(currentT.getTime() + 1800000); 
+                if (!isNaN(currentT) && !isNaN(endTime)) {
+                    while (currentT.getTime() < endTime) {
+                        const { alt, az } = getAzAlt(currentT, place.lat, place.lon, target.ra, target.dec);
+                        if (alt > maxAlt) maxAlt = alt;
+                        
+                        if (isTargetInWindow(az, alt)) hoursInWindow += 0.5;
+                        
+                        currentT = new Date(currentT.getTime() + 1800000); 
+                    }
                 }
 
-                if (hoursInWindow > 0) suggestedList.push({ ...target, hoursInWindow, maxAlt });
+                if (hoursInWindow < 1.0) { 
+                    score = 0; 
+                    if (!msg) msg = "Outside Window";
+                } else { 
+                    score += (maxAlt * 0.5); 
+                    score += (hoursInWindow * 2); 
+                }
+                
+                let isBookmarked = state.bookmarkedTargets.includes(target.name);
+                let enrichedTarget = { ...target, score, hoursInWindow, maxAlt, fovW, fovH, msg };
+
+                if (isBookmarked) bookmarkedList.push(enrichedTarget);
+                else if (score > 0) suggestedList.push(enrichedTarget);
             });
 
-            suggestedList.sort((a, b) => b.hoursInWindow - a.hoursInWindow);
+            const bmContainer = document.getElementById('bookmarkedContainer');
+            const bmListEl = document.getElementById('targetBookmarkedList');
+            bmListEl.innerHTML = '';
+            
+            if (bookmarkedList.length > 0) {
+                bmContainer.classList.remove('hidden');
+                bookmarkedList.forEach(t => renderTargetCard(t, bmListEl, true));
+            } else { bmContainer.classList.add('hidden'); }
+
+            suggestedList.sort((a, b) => b.score - a.score);
+            const top = suggestedList.slice(0, 5);
             const listEl = document.getElementById('targetSuggestionsList');
             listEl.innerHTML = '';
             
-            const tagStr = currentLang === 'he' ? "ש' בחלון" : "h in window";
+            if (top.length === 0) {
+                listEl.innerHTML = `<div class="text-center text-slate-400 text-sm py-6 bg-slate-800/30 rounded-xl border border-slate-700/50">No optimal targets in window tonight.</div>`;
+            } else { top.forEach(t => renderTargetCard(t, listEl, false)); }
+        }
 
-            if (suggestedList.length === 0) {
-                listEl.innerHTML = `<div class="text-center text-slate-400 text-sm py-6 bg-slate-800/30 rounded-xl border border-slate-700/50">No targets in window tonight.</div>`;
-            } else { 
-                suggestedList.forEach(t => {
-                    listEl.innerHTML += `
-                    <div class="glass-card p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800/80 transition-colors border-l-4 border-l-sky-500 shadow-sm ltr:border-l-4 rtl:border-l-0 rtl:border-r-4" onclick='showTargetDetail(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-lg bg-sky-900/40 text-sky-400 flex items-center justify-center text-xl shadow-inner border border-sky-800/30"><i class="fas fa-star"></i></div>
-                            <div>
-                                <h4 class="font-bold text-slate-200 text-sm tracking-wide" dir="ltr">${t.name}</h4>
-                                <div class="text-[9px] text-slate-400 mt-0.5 uppercase">Alt: ${Math.round(t.maxAlt)}°</div>
+        function renderTargetCard(t, container, isBookmarked) {
+            let icon = t.type === 'Galaxy' ? 'fa-atom' : (t.type === 'Emission' ? 'fa-cloud' : 'fa-star');
+            let matchText = t.score === 0 ? `<span class="text-rose-400">${t.msg}</span>` : "Good match";
+            if(t.score > 0) {
+                if(t.size > (t.fovW * 0.4) && t.size < (t.fovW * 0.8)) matchText = "Perfect framing";
+                else if (t.size < (t.fovW * 0.15)) matchText = "Small framing";
+                else if (t.size > (Math.min(t.fovW, t.fovH) * 0.85)) matchText = "Tight fit";
+            }
+
+            const tagStr = currentLang === 'he' ? "ש' בחלון" : "h in window";
+            let statusPill = t.score === 0 
+                ? `<span class="text-[10px] font-bold text-rose-300 bg-rose-900/30 px-2 py-0.5 rounded shadow-sm border border-rose-800/50 ltr-override">Poor</span>`
+                : `<span class="text-[10px] font-bold text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded shadow-sm border border-emerald-800/50 ltr-override">${t.hoursInWindow}${tagStr}</span>`;
+
+            container.innerHTML += `
+                <div class="glass-card p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800/80 transition-colors border-l-4 ${t.score === 0 ? 'border-l-rose-500/50 rtl:border-r-rose-500/50' : 'border-l-sky-500 rtl:border-r-sky-500'} rtl:border-l-0 rtl:border-r-4 shadow-sm relative group" onclick='showTargetDetail(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                    <button onclick="toggleBookmark('${t.name}', event)" class="absolute -top-2 -right-2 rtl:-left-2 rtl:-right-auto w-7 h-7 rounded-full bg-slate-800 border border-slate-700 shadow-md flex items-center justify-center transition-transform hover:scale-110 z-10">
+                        <i class="fas fa-bookmark ${isBookmarked ? 'text-yellow-400' : 'text-slate-500 hover:text-slate-300'} text-xs"></i>
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg ${t.score === 0 ? 'bg-slate-800/80 text-slate-500' : 'bg-sky-900/40 text-sky-400'} flex items-center justify-center text-xl shadow-inner border ${t.score === 0 ? 'border-slate-700' : 'border-sky-800/30'}">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold ${t.score === 0 ? 'text-slate-400 line-through decoration-slate-600' : 'text-slate-200'} text-sm tracking-wide pr-4 ltr-override">${t.name}</h4>
+                            <div class="text-[9px] text-slate-400 mt-0.5 flex items-center gap-2 uppercase font-medium">
+                                <span><i class="fas fa-ruler text-slate-500"></i> ${matchText}</span>
+                                ${t.score > 0 ? `<span><i class="fas fa-arrow-up text-slate-500"></i> <span class="ltr-override">${Math.round(t.maxAlt)}°</span></span>` : ''}
                             </div>
                         </div>
-                        <div class="text-right rtl:text-left flex flex-col items-end rtl:items-start pr-2 rtl:pr-0 rtl:pl-2">
-                            <span class="text-[10px] font-bold text-emerald-400 bg-emerald-900/30 px-2 py-0.5 rounded shadow-sm border border-emerald-800/50">${t.hoursInWindow}${tagStr}</span>
-                        </div>
-                    </div>`;
-                }); 
-            }
+                    </div>
+                    <div class="text-right flex flex-col items-end pr-2 rtl:pr-0 rtl:pl-2">
+                        ${statusPill}
+                        <span class="text-[9px] text-slate-500 mt-1 uppercase tracking-wider">${t.type}</span>
+                    </div>
+                </div>
+            `;
         }
 
         function showTargetDetail(target) {
             document.getElementById('targetDetailCard').classList.remove('hidden');
             document.getElementById('selectedTargetName').innerText = target.name;
-            document.getElementById('selectedTargetType').innerText = target.type;
+            document.getElementById('selectedTargetType').innerText = `${target.type} • Constellation: ${target.const}`;
             document.getElementById('targetMaxAlt').innerText = `${Math.round(target.maxAlt)}°`;
             document.getElementById('targetVisHours').innerText = `${target.hoursInWindow}h`;
             document.getElementById('targetSize').innerText = `${target.size}'`;
             
-            // Generate responsive chart data with "In Window" Highlighting
+            // ALADIN LITE FOV INJECTION
+            if (!window.aladinInstance) {
+                A.init.then(() => {
+                    window.aladinInstance = A.aladin('#aladin-container', {
+                        survey: "P/DSS2/color", showLayersControl: false, showFullscreenControl: false,
+                        showSimbadPointerControl: false, showReticle: false, showCooGridControl: false
+                    });
+                    window.aladinOverlay = A.graphicOverlay({color: '#ef4444', lineWidth: 2}); // Red Box
+                    window.aladinInstance.addOverlay(window.aladinOverlay);
+                    updateAladinTarget(target);
+                });
+            } else { updateAladinTarget(target); }
+
+            // TARGET CHART GENERATION
             const place = getActivePlace();
-            let labels = []; let alts = []; let inWindowColors = [];
-            const startT = new Date(state.astroTimes.astroDusk); startT.setHours(startT.getHours() - 1);
-            const endT = new Date(state.astroTimes.astroDawn); endT.setHours(endT.getHours() + 1);
+            let labels = []; let alts = []; let windowAlts = []; let moonAlts = [];
+            const startT = new Date(state.astroTimes.sunset);
+            startT.setHours(18, 0, 0, 0);
             
-            let currentT = new Date(startT.getTime());
-            
-            while(currentT <= endT) { 
-                labels.push(currentT.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
-                const { alt, az } = getAzAlt(currentT, place.lat, place.lon, target.ra, target.dec);
-                const isWin = isTargetInWindow(az, alt);
-                alts.push(Math.max(0, alt)); 
-                inWindowColors.push(isWin ? '#10b981' : 'rgba(255,255,255,0.1)'); // Green when inside window
-                currentT = new Date(currentT.getTime() + 1800000);
+            let peakAlt = 0; let peakTime = null;
+
+            for(let i=0; i<=24; i++) { 
+                const t = new Date(startT.getTime() + (i * 1800000));
+                labels.push(t.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
+                
+                const { alt, az } = getAzAlt(t, place.lat, place.lon, target.ra, target.dec);
+                const altVal = Math.max(0, alt);
+                alts.push(altVal); 
+                
+                if (alt > peakAlt) { peakAlt = alt; peakTime = t; }
+                
+                // Highlight exact points inside backyard window
+                if(isTargetInWindow(az, alt)) {
+                    windowAlts.push(altVal);
+                } else {
+                    windowAlts.push(null);
+                }
+
+                const moonPos = SunCalc.getMoonPosition(t, place.lat, place.lon);
+                moonAlts.push(Math.max(0, moonPos.altitude * 180 / Math.PI));
             }
+
+            if(peakTime) document.getElementById('targetTransit').innerText = peakTime.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
 
             const ctx = document.getElementById('targetCanvas').getContext('2d');
             if(targetChart) targetChart.destroy();
-            
-            const targetLbl = currentLang === 'he' ? "גובה מטרה" : "Target Alt";
-            const winLbl = currentLang === 'he' ? "בחלון הראייה" : "In Window";
             
             targetChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels,
-                    datasets: [{
-                        label: targetLbl,
-                        data: alts,
-                        borderColor: '#38bdf8',
-                        segment: { borderColor: ctx => inWindowColors[ctx.p1DataIndex] === '#10b981' ? '#10b981' : '#38bdf8' },
-                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                        fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0
-                    }]
+                    datasets: [
+                        { label: 'Target Path', data: alts, borderColor: 'rgba(56, 189, 248, 0.4)', fill: false, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { label: 'In Window', data: windowAlts, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.4, borderWidth: 3, pointRadius: 0 },
+                        { label: 'Moon Alt', data: moonAlts, borderColor: '#cbd5e1', borderDash: [5,5], tension: 0.4, borderWidth: 1, pointRadius: 0 }
+                    ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: true, position: 'bottom', labels: {color:'#94a3b8', font:{size:10}} }
-                    },
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { display: true, position: 'bottom', labels: {color: '#94a3b8', font:{size: 10}} } },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {maxTicksLimit: 6, color:'#94a3b8'} },
-                        y: { min: 0, max: 90, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color:'#94a3b8'} }
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {maxTicksLimit: 8, color: '#94a3b8'} },
+                        y: { min: 0, max: 90, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: {color: '#94a3b8'} }
                     }
                 }
             });
             
             setTimeout(() => document.getElementById('targetDetailCard').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }
+
+        function updateAladinTarget(t) {
+            if(!window.aladinInstance) return;
+            window.aladinInstance.gotoRaDec(t.ra, t.dec);
+            
+            let fovW_deg = t.fovW / 60;
+            let fovH_deg = t.fovH / 60;
+            window.aladinInstance.setFov(Math.max(fovW_deg, fovH_deg) * 1.6); 
+            
+            window.aladinOverlay.removeAll();
+            
+            let decRad = t.dec * Math.PI / 180;
+            let raOffset = (fovW_deg / 2) / Math.cos(decRad);
+            let decOffset = fovH_deg / 2;
+            
+            window.aladinOverlay.add(A.polygon([
+                [t.ra - raOffset, t.dec - decOffset],
+                [t.ra + raOffset, t.dec - decOffset],
+                [t.ra + raOffset, t.dec + decOffset],
+                [t.ra - raOffset, t.dec + decOffset]
+            ]));
         }
 
         function closeTargetDetail() { document.getElementById('targetDetailCard').classList.add('hidden'); }
