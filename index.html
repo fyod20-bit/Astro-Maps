@@ -436,7 +436,7 @@
                 </div>
             </div>
 
-            <!-- Backyard Imaging Window (Directional Box) -->
+            <!-- Backyard Imaging Window (Directional Box with Sensor Calibration) -->
             <div class="glass-card p-5 space-y-4 border border-sky-900/30">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                     <h3 class="text-sm font-bold text-sky-400"><i class="fas fa-window-maximize me-2"></i> Backyard Imaging Window</h3>
@@ -445,34 +445,34 @@
                         <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
                     </label>
                 </div>
-                <p class="text-[10px] text-slate-400 leading-tight">Restrict target planner to a specific sky patch (Azimuth Left/Right & Altitude Bottom/Top). Point your phone using compass & gyro sensors to calibrate!</p>
+                <p class="text-[10px] text-slate-400 leading-tight">Restrict target planner to a specific sky patch (Azimuth Left/Right & Altitude Bottom/Top). Tap "Point" to use your device sensors!</p>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 min-w-0">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Left Azimuth (°)</label>
-                            <button onclick="startWindowCalibration('azMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-compass"></i> Point</button>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase truncate">Left Azimuth (°)</label>
+                            <button onclick="startWindowCalibration('azMin')" class="text-sky-400 hover:text-sky-300 text-xs flex-shrink-0"><i class="fas fa-compass"></i> Point</button>
                         </div>
                         <input type="number" id="winAzMin" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="0">
                     </div>
-                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 min-w-0">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Right Azimuth (°)</label>
-                            <button onclick="startWindowCalibration('azMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-compass"></i> Point</button>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase truncate">Right Azimuth (°)</label>
+                            <button onclick="startWindowCalibration('azMax')" class="text-sky-400 hover:text-sky-300 text-xs flex-shrink-0"><i class="fas fa-compass"></i> Point</button>
                         </div>
                         <input type="number" id="winAzMax" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="360">
                     </div>
-                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 min-w-0">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Bottom Alt (°)</label>
-                            <button onclick="startWindowCalibration('altMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-ruler-vertical"></i> Point</button>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase truncate">Bottom Alt (°)</label>
+                            <button onclick="startWindowCalibration('altMin')" class="text-sky-400 hover:text-sky-300 text-xs flex-shrink-0"><i class="fas fa-ruler-vertical"></i> Point</button>
                         </div>
                         <input type="number" id="winAltMin" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="30">
                     </div>
-                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 min-w-0">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Top Alt (°)</label>
-                            <button onclick="startWindowCalibration('altMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-ruler-vertical"></i> Point</button>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase truncate">Top Alt (°)</label>
+                            <button onclick="startWindowCalibration('altMax')" class="text-sky-400 hover:text-sky-300 text-xs flex-shrink-0"><i class="fas fa-ruler-vertical"></i> Point</button>
                         </div>
                         <input type="number" id="winAltMax" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="60">
                     </div>
@@ -857,7 +857,8 @@
                 currentSensorHeading = Math.round((heading + 360) % 360);
             }
             if (event.beta !== null) {
-                let alt = 90 - Math.abs(event.beta);
+                // Robust altitude calculation from 0° (horizon) to 90° (zenith) using Math.abs(event.beta - 90)
+                let alt = Math.abs(event.beta - 90);
                 currentSensorAlt = Math.max(0, Math.min(90, Math.round(alt)));
             }
 
