@@ -38,7 +38,7 @@
         }
 
         /* RTL Specific Adjustments */
-        [dir="rtl"] .timeline-bar { direction: ltr; } /* Keep charts/timeline LTR for numbers */
+        [dir="rtl"] .timeline-bar { direction: ltr; } 
         [dir="rtl"] .font-mono { direction: ltr; display: inline-block; }
 
         /* Astro Red Mode Filter */
@@ -87,7 +87,6 @@
 </head>
 <body class="flex flex-col h-[100dvh] overflow-hidden text-sm">
 
-    <!-- Header -->
     <header class="pt-8 pb-3 px-5 bg-slate-900/90 backdrop-blur-md z-20 flex justify-between items-center border-b border-slate-800 shadow-md flex-shrink-0">
         <div>
             <h1 class="text-xl font-bold text-white tracking-wide"><span data-i18n="title1">ASTRO</span><span class="text-sky-400" data-i18n="title2">WINDOW</span></h1>
@@ -111,7 +110,6 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar pb-28 relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0b1120] to-[#0b1120]" id="mainContent">
         
         <!-- ================= TAB 1: DASHBOARD ================= -->
@@ -233,7 +231,7 @@
         <div id="view-targets" class="hidden p-4 space-y-5">
             <div class="mb-2">
                 <h2 class="text-lg font-bold text-white tracking-wide" data-i18n="targetPlanner">Target Planner</h2>
-                <p class="text-xs text-slate-400 mt-1" data-i18n="plannerDesc">Filtered by your FOV, moon phase, and custom horizon limits.</p>
+                <p class="text-xs text-slate-400 mt-1" data-i18n="plannerDesc">Filtered by your FOV, moon phase, and backyard imaging window.</p>
             </div>
 
             <!-- Rig Summary -->
@@ -252,9 +250,7 @@
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <i class="fas fa-bookmark text-sky-400"></i> <span data-i18n="bookmarked">Bookmarked Targets</span>
                 </h3>
-                <div id="targetBookmarkedList" class="space-y-3 mb-6">
-                    <!-- Injected via JS -->
-                </div>
+                <div id="targetBookmarkedList" class="space-y-3 mb-6"></div>
             </div>
 
             <!-- Suggestions Container -->
@@ -440,42 +436,6 @@
                 </div>
             </div>
 
-            <!-- Custom Horizon Limits -->
-            <div class="glass-card p-5 space-y-4 border border-sky-900/30">
-                <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fas fa-mountain me-2"></i> <span data-i18n="customHorizon">Custom Horizon Limits</span></h3>
-                <p class="text-[10px] text-slate-400 leading-tight" data-i18n="horizonDesc">Set minimum visible altitude (degrees) to avoid trees or houses. Target Planner will use these limits based on the object's azimuth.</p>
-                <div class="grid grid-cols-4 gap-2">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="north">North</label>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="hzN" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
-                            <button onclick="startSensorMeasurement('N')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="east">East</label>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="hzE" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
-                            <button onclick="startSensorMeasurement('E')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="south">South</label>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="hzS" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
-                            <button onclick="startSensorMeasurement('S')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="west">West</label>
-                        <div class="flex items-center gap-1">
-                            <input type="number" id="hzW" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
-                            <button onclick="startSensorMeasurement('W')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Backyard Imaging Window (Directional Box) -->
             <div class="glass-card p-5 space-y-4 border border-sky-900/30">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-2">
@@ -485,7 +445,7 @@
                         <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
                     </label>
                 </div>
-                <p class="text-[10px] text-slate-400 leading-tight">Restrict target planner to a specific sky patch (Azimuth Left/Right & Altitude Bottom/Top). Calibrate directly by pointing your phone!</p>
+                <p class="text-[10px] text-slate-400 leading-tight">Restrict target planner to a specific sky patch (Azimuth Left/Right & Altitude Bottom/Top). Point your phone using compass & gyro sensors to calibrate!</p>
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
@@ -505,14 +465,14 @@
                     <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Bottom Alt (°)</label>
-                            <button onclick="startWindowCalibration('altMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-crosshairs"></i> Point</button>
+                            <button onclick="startWindowCalibration('altMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-ruler-vertical"></i> Point</button>
                         </div>
                         <input type="number" id="winAltMin" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="30">
                     </div>
                     <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase">Top Alt (°)</label>
-                            <button onclick="startWindowCalibration('altMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-crosshairs"></i> Point</button>
+                            <button onclick="startWindowCalibration('altMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-ruler-vertical"></i> Point</button>
                         </div>
                         <input type="number" id="winAltMax" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="60">
                     </div>
@@ -592,12 +552,19 @@
         </div>
     </div>
 
-    <!-- Sensor Measurement Modal -->
+    <!-- Sensor Measurement / Calibration Modal -->
     <div id="sensorModal" class="hidden fixed inset-0 z-[60] bg-slate-900 flex flex-col justify-center items-center p-6">
-        <h2 class="text-xl font-bold text-white mb-1 text-center" id="sensorModalTitle">Measure Limit</h2>
-        <div class="text-[10px] text-slate-400 mb-6 text-center uppercase tracking-wider">Point device & capture</div>
-        <div class="text-6xl font-mono text-sky-400 mb-8 drop-shadow-lg font-bold" id="sensorValueDisplay">0°</div>
-        <p class="text-slate-300 mb-8 text-center text-xs max-w-xs leading-relaxed bg-slate-800/60 p-4 rounded-xl border border-slate-700" id="sensorInstructions">
+        <h2 class="text-xl font-bold text-white mb-1 text-center" id="sensorModalTitle">Calibrate Boundary</h2>
+        <div class="text-[10px] text-slate-400 mb-4 text-center uppercase tracking-wider" id="sensorModalSubtitle">Point device & capture</div>
+        
+        <!-- DYNAMIC VISUALIZATION CONTAINER (COMPASS OR ALTITUDE GAUGE) -->
+        <div id="sensorVisualContainer" class="w-48 h-48 my-2 flex items-center justify-center relative">
+            <!-- Injected dynamically via JS -->
+        </div>
+
+        <div class="text-4xl font-mono text-sky-400 mb-4 drop-shadow-lg font-bold" id="sensorValueDisplay">0°</div>
+        
+        <p class="text-slate-300 mb-6 text-center text-xs max-w-xs leading-relaxed bg-slate-800/60 p-3 rounded-xl border border-slate-700" id="sensorInstructions">
             Point your phone at the desired boundary and capture.
         </p>
         <div class="flex gap-4 w-full max-w-xs">
@@ -619,21 +586,19 @@
     </div>
 
     <script>
-        // ================= TRANSLATIONS =================
         const translations = {
             en: {
                 title1: "ASTRO", title2: "WINDOW", detecting: "Detecting...", useGps: "Use My Current Location",
                 tonightScore: "Tonight's Astro Score", clouds: "Clouds", wind: "Wind", seeing: "Seeing", transp: "Transp.",
                 bestWindow: "Best Window", duration: "Duration", nightTimeline: "Night Timeline", sunset: "Sunset", moonset: "Moonset",
                 astroStart: "Astro Start", astroEnd: "Astro End", moonIllum: "Moon Illum", forecast: "7-Day Astro Forecast", clickDay: "Click a day to view its detailed hourly chart",
-                targetPlanner: "Target Planner", plannerDesc: "Filtered by your FOV, moon phase, and custom horizon limits.", rigProfile: "Active Rig Profile",
+                targetPlanner: "Target Planner", plannerDesc: "Filtered by your FOV, moon phase, and backyard imaging window.", rigProfile: "Active Rig Profile",
                 edit: "Edit", bookmarked: "Bookmarked Targets", topTargets: "Top Targets Tonight", transit: "Transit Time", maxAlt: "Max Altitude", visible: "Visible", appSize: "Apparent Size",
                 visualFov: "Visual FOV Framing", aladinText: "Red box indicates your camera sensor framing.", altTime: "Altitude vs Time (Tonight)", lpMap: "Light Pollution Map", extService: "External Service",
                 lpTitle: "Interactive LP Map", lpText: "Due to browser security restrictions from the map provider, it cannot be embedded directly inside the app. Click below to view the light pollution around your active location securely.",
                 openMap: "Open Map in New Tab", obsLocs: "Observing Locations", searchLoc: "Search city or location...", search: "Search", addLoc: "Add Custom Location", pickMap: "Pick on Map",
                 mySaved: "My Saved Places", rigSettings: "Rig & Settings", myEq: "My Equipment", focal: "Focal Length (mm)", aperture: "Aperture (mm)", sensor: "Camera Sensor Size",
-                filter: "Primary Filter", mount: "Mount Stability", customHorizon: "Custom Horizon Limits", horizonDesc: "Set minimum visible altitude (degrees) to avoid trees or houses. Target Planner will use these limits based on the object's azimuth.",
-                north: "North", east: "East", south: "South", west: "West", saveProfile: "Save Profile & Recalculate", thresholds: "Active Scoring Thresholds",
+                filter: "Primary Filter", mount: "Mount Stability", saveProfile: "Save Profile & Recalculate", thresholds: "Active Scoring Thresholds",
                 navDash: "Dash", navTargets: "Targets", navLp: "LP Map", navPlaces: "Places", navRig: "Rig"
             },
             he: {
@@ -641,14 +606,13 @@
                 tonightScore: "ציון אסטרו הלילה", clouds: "עננים", wind: "רוח", seeing: "ראות", transp: "שקיפות",
                 bestWindow: "חלון הזמן הטוב ביותר", duration: "משך", nightTimeline: "ציר זמן הלילה", sunset: "שקיעה", moonset: "שקיעת הירח",
                 astroStart: "תחילת אסטרו", astroEnd: "סיום אסטרו", moonIllum: "הארת הירח", forecast: "תחזית אסטרו ל-7 ימים", clickDay: "לחץ על יום לפרטים",
-                targetPlanner: "מתכנן יעדים", plannerDesc: "מסונן לפי שדה הראייה שלך, מופע הירח, ומגבלות האופק המותאמות.", rigProfile: "פרופיל ציוד פעיל",
+                targetPlanner: "מתכנן יעדים", plannerDesc: "מסונן לפי שדה הראייה שלך, מופע הירח, וחלון הצילום בחצר.", rigProfile: "פרופיל ציוד פעיל",
                 edit: "ערוך", bookmarked: "יעדים שמורים", topTargets: "היעדים הטובים הלילה", transit: "זמן מעבר", maxAlt: "גובה מקסימלי", visible: "זמן צפייה", appSize: "גודל נראה",
                 visualFov: "תצוגת שדה ראייה", aladinText: "התיבה האדומה מייצגת את החיישן של המצלמה שלך.", altTime: "גובה מול זמן (הלילה)", lpMap: "מפת זיהום אור", extService: "שירות חיצוני",
                 lpTitle: "מפת זיהום אור", lpText: "עקב מגבלות אבטחה של ספק המפה, לא ניתן להטמיע אותה ישירות באפליקציה. לחץ מטה כדי לפתוח בלשונית חדשה.",
                 openMap: "פתח מפה בלשונית חדשה", obsLocs: "מיקומי תצפית", searchLoc: "חפש עיר...", search: "חפש", addLoc: "הוסף מיקום מותאם", pickMap: "בחר במפה",
                 mySaved: "המיקומים השמורים שלי", rigSettings: "ציוד והגדרות", myEq: "הציוד שלי", focal: "אורך מוקד (מ״מ)", aperture: "מפתח (מ״מ)", sensor: "חיישן מצלמה",
-                filter: "פילטר עיקרי", mount: "יציבות חצובה", customHorizon: "מגבלות אופק", horizonDesc: "הגדר גובה מינימלי (מעלות) כדי למנוע חסימת עצים או בתים.",
-                north: "צפון", east: "מזרח", south: "דרום", west: "מערב", saveProfile: "שמור פרופיל וחשב מחדש", thresholds: "ספי ניקוד פעילים",
+                filter: "פילטר עיקרי", mount: "יציבות חצובה", saveProfile: "שמור פרופיל וחשב מחדש", thresholds: "ספי ניקוד פעילים",
                 navDash: "ראשי", navTargets: "יעדים", navLp: "זיהום אור", navPlaces: "מיקומים", navRig: "ציוד"
             }
         };
@@ -686,7 +650,6 @@
             sensor: 'apsc', 
             filter: 'dualband', 
             mount: 'medium', 
-            horizon: {n:30, e:30, s:30, w:30},
             window: { enabled: false, azMin: 0, azMax: 360, altMin: 30, altMax: 60 }
         };
         const defaultPlaces = [
@@ -696,7 +659,6 @@
         ];
 
         let storedRig = JSON.parse(localStorage.getItem('awp_rig'));
-        if (storedRig && !storedRig.horizon) storedRig.horizon = {n:30, e:30, s:30, w:30};
         if (storedRig && !storedRig.window) storedRig.window = { enabled: false, azMin: 0, azMax: 360, altMin: 30, altMax: 60 };
 
         let state = {
@@ -823,28 +785,23 @@
             else badge.classList.add('bg-rose-900', 'text-rose-200', 'border-rose-700'); 
         }
 
-        // ================= SENSOR & WINDOW CALIBRATION =================
-        let activeSensorTarget = null; // 'N', 'E', 'S', 'W', 'azMin', 'azMax', 'altMin', 'altMax'
+        let activeSensorTarget = null; // 'azMin', 'azMax', 'altMin', 'altMax'
         let currentSensorHeading = 0;
         let currentSensorAlt = 0;
-
-        function startSensorMeasurement(dir) {
-            activeSensorTarget = dir;
-            document.getElementById('sensorModalTitle').innerText = currentLang === 'en' ? `Measure Horizon (${dir})` : `מדידת אופק (${dir})`;
-            document.getElementById('sensorInstructions').innerText = currentLang === 'en' ? `Point your phone in the ${dir} direction at the horizon limit.` : `כוונו את הטלפון לכיוון ${dir} אל גבול האופק.`;
-            openSensorModal();
-        }
 
         function startWindowCalibration(param) {
             activeSensorTarget = param;
             const names = {
                 azMin: currentLang === 'en' ? 'Left Azimuth (Compass)' : 'אזימוט שמאלי (מצפן)',
                 azMax: currentLang === 'en' ? 'Right Azimuth (Compass)' : 'אזימוט ימני (מצפן)',
-                altMin: currentLang === 'en' ? 'Bottom Altitude' : 'גובה תחתון',
-                altMax: currentLang === 'en' ? 'Top Altitude' : 'גובה עליון'
+                altMin: currentLang === 'en' ? 'Bottom Altitude (Gauge)' : 'גובה תחתון (מד גובה)',
+                altMax: currentLang === 'en' ? 'Top Altitude (Gauge)' : 'גובה עליון (מד גובה)'
             };
             document.getElementById('sensorModalTitle').innerText = names[param];
+            document.getElementById('sensorModalSubtitle').innerText = ['azMin', 'azMax'].includes(param) ? "Rotate phone to desired heading" : "Tilt phone to desired elevation";
             document.getElementById('sensorInstructions').innerText = currentLang === 'en' ? 'Point your phone at this boundary and tap capture.' : 'כוונו את הטלפון אל גבול זה ולחצו על לכידה.';
+            
+            renderSensorVisual();
             openSensorModal();
         }
 
@@ -861,6 +818,39 @@
             currentSensorAlt = 0;
         }
 
+        function renderSensorVisual() {
+            const container = document.getElementById('sensorVisualContainer');
+            container.innerHTML = '';
+            
+            if (activeSensorTarget && ['azMin', 'azMax'].includes(activeSensorTarget)) {
+                // Compass SVG
+                container.innerHTML = `
+                    <div class="relative w-40 h-40 rounded-full border-2 border-slate-700 bg-slate-900/90 flex items-center justify-center shadow-inner">
+                        <div class="absolute top-1 text-[10px] font-bold text-rose-500">N</div>
+                        <div class="absolute bottom-1 text-[10px] font-bold text-slate-500">S</div>
+                        <div class="absolute start-1 text-[10px] font-bold text-slate-500">W</div>
+                        <div class="absolute end-1 text-[10px] font-bold text-slate-500">E</div>
+                        <div id="compassNeedle" class="absolute w-full h-full flex items-center justify-center transition-transform duration-75">
+                            <div class="w-1 h-20 bg-gradient-to-t from-sky-500 to-rose-500 rounded-full relative -top-3 shadow-[0_0_10px_rgba(56,189,248,0.5)]"></div>
+                        </div>
+                        <div class="w-3 h-3 bg-white rounded-full z-10 shadow"></div>
+                    </div>
+                `;
+            } else {
+                // Airplane Altimeter / Vertical Pitch Ladder Ruler
+                container.innerHTML = `
+                    <div class="relative w-24 h-44 bg-slate-900/90 border border-slate-700 rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
+                        <div class="absolute inset-y-2 w-full flex flex-col justify-between items-center py-2 text-[9px] text-slate-500 font-mono pointer-events-none" id="pitchRuler">
+                            <span>90°</span><span>75°</span><span>60°</span><span>45°</span><span>30°</span><span>15°</span><span>0°</span>
+                        </div>
+                        <div class="absolute w-full h-0.5 bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)] transition-all duration-75" id="altitudeIndicator" style="top: 50%;">
+                            <div class="absolute end-2 -top-2 text-[10px] font-bold text-sky-300 font-mono" id="altMarkerVal">45°</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
         function handleOrientation(event) {
             if (event.alpha !== null) {
                 let heading = event.webkitCompassHeading || (360 - event.alpha);
@@ -873,10 +863,18 @@
 
             if (activeSensorTarget && ['azMin', 'azMax'].includes(activeSensorTarget)) {
                 document.getElementById('sensorValueDisplay').innerText = currentSensorHeading + '°';
-            } else if (activeSensorTarget && ['altMin', 'altMax'].includes(activeSensorTarget)) {
-                document.getElementById('sensorValueDisplay').innerText = currentSensorAlt + '°';
+                const needle = document.getElementById('compassNeedle');
+                if (needle) needle.style.transform = `rotate(${currentSensorHeading}deg)`;
             } else if (activeSensorTarget) {
                 document.getElementById('sensorValueDisplay').innerText = currentSensorAlt + '°';
+                const indicator = document.getElementById('altitudeIndicator');
+                const valLabel = document.getElementById('altMarkerVal');
+                if (indicator && valLabel) {
+                    // Map 0-90 degrees to top 10% to bottom 90% of the gauge
+                    let topPct = 10 + ((90 - currentSensorAlt) / 90) * 80;
+                    indicator.style.top = `${topPct}%`;
+                    valLabel.innerText = currentSensorAlt + '°';
+                }
             }
         }
 
@@ -886,8 +884,6 @@
                 document.getElementById('win' + (activeSensorTarget === 'azMin' ? 'AzMin' : 'AzMax')).value = currentSensorHeading;
             } else if (['altMin', 'altMax'].includes(activeSensorTarget)) {
                 document.getElementById('win' + (activeSensorTarget === 'altMin' ? 'AltMin' : 'AltMax')).value = currentSensorAlt;
-            } else {
-                document.getElementById('hz' + activeSensorTarget).value = currentSensorAlt;
             }
             closeSensorModal();
         }
@@ -898,18 +894,12 @@
             activeSensorTarget = null;
         }
 
-        // ================= SETTINGS / RIG =================
         function initSettingsUI() {
             document.getElementById('eqFocalLength').value = state.rig.focalLength;
             document.getElementById('eqAperture').value = state.rig.aperture;
             document.getElementById('eqSensor').value = state.rig.sensor;
             document.getElementById('eqFilter').value = state.rig.filter;
             document.getElementById('eqMount').value = state.rig.mount;
-            
-            document.getElementById('hzN').value = state.rig.horizon.n;
-            document.getElementById('hzE').value = state.rig.horizon.e;
-            document.getElementById('hzS').value = state.rig.horizon.s;
-            document.getElementById('hzW').value = state.rig.horizon.w;
 
             const win = state.rig.window || defaultRig.window;
             document.getElementById('winEnabled').checked = win.enabled;
@@ -928,12 +918,6 @@
                 sensor: document.getElementById('eqSensor').value,
                 filter: document.getElementById('eqFilter').value,
                 mount: document.getElementById('eqMount').value,
-                horizon: {
-                    n: parseInt(document.getElementById('hzN').value) || 30,
-                    e: parseInt(document.getElementById('hzE').value) || 30,
-                    s: parseInt(document.getElementById('hzS').value) || 30,
-                    w: parseInt(document.getElementById('hzW').value) || 30,
-                },
                 window: {
                     enabled: document.getElementById('winEnabled').checked,
                     azMin: parseFloat(document.getElementById('winAzMin').value) || 0,
@@ -946,7 +930,7 @@
             updateRigSummary();
             calculateNightAstroScore(); 
             generateTargetSuggestions();
-            showMessage(currentLang === 'en' ? "Settings Saved" : "הגדרות נשמרו", currentLang === 'en' ? "Your Rig & Window profile updated." : "פרופיל הציוד והחלון עודכן בהצלחה.", "fa-check");
+            showMessage(currentLang === 'en' ? "Settings Saved" : "הגדרות נשמרו", currentLang === 'en' ? "Your Rig & Backyard Window profile updated." : "פרופיל הציוד וחלון הצילום עודכנו בהצלחה.", "fa-check");
             switchTab('dashboard');
         }
 
@@ -1484,11 +1468,11 @@
                 options: {
                     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                     plugins: { 
-                        legend: { display: false },
+                        legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: {size: 9}, boxWidth: 6 } },
                         annotation: { annotations: { box1: { type: 'box', xMin: astroStartIndex, xMax: astroEndIndex, backgroundColor: 'rgba(30, 58, 138, 0.25)', borderWidth: 0 } } }
                     },
                     scales: {
-                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: {size: 10}, maxTicksLimit: 12 } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: {size: 9}, maxTicksLimit: 8 } },
                         y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' }, display: false },
                         y1: { position: 'right', grid: { drawOnChartArea: false }, display: false }
                     }
@@ -1531,14 +1515,6 @@
             if (Math.sin(ha) > 0) az = 2 * Math.PI - az;
 
             return { alt: alt * 180 / Math.PI, az: az * 180 / Math.PI };
-        }
-
-        function getHorizonLimit(az, limits) {
-            if (az >= 0 && az < 90) return limits.n + (limits.e - limits.n) * (az / 90);
-            if (az >= 90 && az < 180) return limits.e + (limits.s - limits.e) * ((az - 90) / 90);
-            if (az >= 180 && az < 270) return limits.s + (limits.w - limits.s) * ((az - 180) / 90);
-            if (az >= 270 && az <= 360) return limits.w + (limits.n - limits.w) * ((az - 270) / 90);
-            return 30;
         }
 
         function toggleBookmark(targetName, e) {
@@ -1591,7 +1567,6 @@
                 if (!isNaN(currentT) && !isNaN(endTime)) {
                     while (currentT.getTime() < endTime) {
                         const { alt, az } = getAzAlt(currentT, place.lat, place.lon, target.ra, target.dec);
-                        const currentLimit = getHorizonLimit(az, rig.horizon);
                         
                         if (alt > maxAlt) maxAlt = alt;
                         
@@ -1605,9 +1580,11 @@
                             }
                             let altMatch = (alt >= win.altMin && alt <= win.altMax);
                             inWindow = azMatch && altMatch;
+                        } else {
+                            inWindow = (alt >= 30); // Default minimum limit if window disabled
                         }
 
-                        if (alt >= currentLimit && inWindow) hoursVisible += 0.5;
+                        if (inWindow) hoursVisible += 0.5;
                         currentT = new Date(currentT.getTime() + 1800000); 
                     }
                 }
@@ -1705,7 +1682,7 @@
             } else { updateAladinTarget(target); }
 
             const place = getActivePlace();
-            let labels = []; let alts = []; let moonAlts = []; let horizonLimits = [];
+            let labels = []; let alts = []; let moonAlts = [];
             const startT = new Date(state.astroTimes.sunset);
             startT.setHours(18, 0, 0, 0);
             
@@ -1715,11 +1692,9 @@
                 const t = new Date(startT.getTime() + (i * 1800000));
                 labels.push(t.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
                 
-                const { alt, az } = getAzAlt(t, place.lat, place.lon, target.ra, target.dec);
+                const { alt } = getAzAlt(t, place.lat, place.lon, target.ra, target.dec);
                 alts.push(Math.max(0, alt)); 
                 if (alt > peakAlt) { peakAlt = alt; peakTime = t; }
-                
-                horizonLimits.push(getHorizonLimit(az, state.rig.horizon));
 
                 const moonPos = SunCalc.getMoonPosition(t, place.lat, place.lon);
                 moonAlts.push(Math.max(0, moonPos.altitude * 180 / Math.PI));
@@ -1736,9 +1711,8 @@
                 data: {
                     labels,
                     datasets: [
-                        { label: 'Target Alt', data: alts, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
-                        { label: 'Moon Alt', data: moonAlts, borderColor: '#cbd5e1', borderDash: [5,5], tension: 0.4, borderWidth: 1, pointRadius: 0 },
-                        { label: 'Custom Horizon', data: horizonLimits, borderColor: 'rgba(248, 113, 113, 0.6)', borderDash: [2,2], borderWidth: 1, pointRadius: 0 }
+                        { label: 'Target Altitude', data: alts, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { label: 'Moon Altitude', data: moonAlts, borderColor: '#cbd5e1', borderDash: [5,5], tension: 0.4, borderWidth: 1, pointRadius: 0 }
                     ]
                 },
                 options: {
