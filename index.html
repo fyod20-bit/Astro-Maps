@@ -61,8 +61,6 @@
         .nav-item { transition: all 0.2s; color: #64748b; }
         .nav-item.active { color: #38bdf8; }
 
-        .chart-container-scroll { width: 1200px; height: 300px; position: relative; }
-        .target-chart-scroll { width: 800px; height: 200px; position: relative; }
         #map { height: 100%; width: 100%; }
 
         .timeline-bar {
@@ -101,7 +99,7 @@
         </div>
         <div class="flex flex-col items-end gap-2">
             <div class="flex items-center gap-3">
-                <button onclick="toggleLang()" id="langToggleBtn" class="text-[10px] font-bold bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 hover:text-white transition-colors">
+                <button onclick="toggleLang()" id="langToggleBtn" class="text-[10px] font-bold bg-slate-800 px-2.5 py-1 rounded text-slate-300 border border-slate-700 hover:text-white transition-colors">
                     HE
                 </button>
                 <div id="bortleDisplay" class="bortle-badge bg-slate-800 text-slate-300 border border-slate-700 shadow-sm">Bortle --</div>
@@ -396,11 +394,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="focal">Focal Length (mm)</label>
-                        <input type="number" id="eqFocalLength" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner" dir="ltr">
+                        <input type="number" id="eqFocalLength" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner font-mono" dir="ltr">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider" data-i18n="aperture">Aperture (mm)</label>
-                        <input type="number" id="eqAperture" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner" dir="ltr">
+                        <input type="number" id="eqAperture" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-sky-500 shadow-inner font-mono" dir="ltr">
                     </div>
                 </div>
 
@@ -442,46 +440,85 @@
                 </div>
             </div>
 
+            <!-- Custom Horizon Limits -->
             <div class="glass-card p-5 space-y-4 border border-sky-900/30">
-                <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2 flex items-center justify-between">
-                    <span><i class="fas fa-mountain me-2"></i> <span data-i18n="customHorizon">Custom Horizon Limits</span></span>
-                </h3>
+                <h3 class="text-sm font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fas fa-mountain me-2"></i> <span data-i18n="customHorizon">Custom Horizon Limits</span></h3>
                 <p class="text-[10px] text-slate-400 leading-tight" data-i18n="horizonDesc">Set minimum visible altitude (degrees) to avoid trees or houses. Target Planner will use these limits based on the object's azimuth.</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- N -->
-                    <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700 flex flex-col items-center">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1" data-i18n="north">North</label>
-                        <div class="flex items-center gap-1 w-full">
-                            <input type="number" id="hzN" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center text-sm focus:border-sky-500 font-mono" dir="ltr">
+                <div class="grid grid-cols-4 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="north">North</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="hzN" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
                             <button onclick="startSensorMeasurement('N')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
                         </div>
                     </div>
-                    <!-- E -->
-                    <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700 flex flex-col items-center">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1" data-i18n="east">East</label>
-                        <div class="flex items-center gap-1 w-full">
-                            <input type="number" id="hzE" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center text-sm focus:border-sky-500 font-mono" dir="ltr">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="east">East</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="hzE" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
                             <button onclick="startSensorMeasurement('E')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
                         </div>
                     </div>
-                    <!-- S -->
-                    <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700 flex flex-col items-center">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1" data-i18n="south">South</label>
-                        <div class="flex items-center gap-1 w-full">
-                            <input type="number" id="hzS" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center text-sm focus:border-sky-500 font-mono" dir="ltr">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="south">South</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="hzS" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
                             <button onclick="startSensorMeasurement('S')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
                         </div>
                     </div>
-                    <!-- W -->
-                    <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700 flex flex-col items-center">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1" data-i18n="west">West</label>
-                        <div class="flex items-center gap-1 w-full">
-                            <input type="number" id="hzW" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-center text-sm focus:border-sky-500 font-mono" dir="ltr">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1 text-center" data-i18n="west">West</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="hzW" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-center text-sm focus:border-sky-500 font-mono min-w-0" dir="ltr">
                             <button onclick="startSensorMeasurement('W')" class="bg-sky-600 hover:bg-sky-500 text-white rounded p-1.5 w-8 h-8 flex-shrink-0 flex items-center justify-center transition-colors" title="Measure with Sensor"><i class="fas fa-crosshairs"></i></button>
                         </div>
                     </div>
                 </div>
-                <button onclick="saveSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg mt-4 text-sm transition-colors shadow-lg flex items-center justify-center gap-2">
+            </div>
+
+            <!-- Backyard Imaging Window (Directional Box) -->
+            <div class="glass-card p-5 space-y-4 border border-sky-900/30">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                    <h3 class="text-sm font-bold text-sky-400"><i class="fas fa-window-maximize me-2"></i> Backyard Imaging Window</h3>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="winEnabled" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                    </label>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-tight">Restrict target planner to a specific sky patch (Azimuth Left/Right & Altitude Bottom/Top). Calibrate directly by pointing your phone!</p>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Left Azimuth (°)</label>
+                            <button onclick="startWindowCalibration('azMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-compass"></i> Point</button>
+                        </div>
+                        <input type="number" id="winAzMin" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="0">
+                    </div>
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Right Azimuth (°)</label>
+                            <button onclick="startWindowCalibration('azMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-compass"></i> Point</button>
+                        </div>
+                        <input type="number" id="winAzMax" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="360">
+                    </div>
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Bottom Alt (°)</label>
+                            <button onclick="startWindowCalibration('altMin')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-crosshairs"></i> Point</button>
+                        </div>
+                        <input type="number" id="winAltMin" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="30">
+                    </div>
+                    <div class="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Top Alt (°)</label>
+                            <button onclick="startWindowCalibration('altMax')" class="text-sky-400 hover:text-sky-300 text-xs"><i class="fas fa-crosshairs"></i> Point</button>
+                        </div>
+                        <input type="number" id="winAltMax" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white font-mono text-sm" dir="ltr" value="60">
+                    </div>
+                </div>
+
+                <button onclick="saveSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-lg mt-2 text-sm transition-colors shadow-lg flex items-center justify-center gap-2">
                     <i class="fas fa-save"></i> <span data-i18n="saveProfile">Save Profile & Recalculate</span>
                 </button>
             </div>
@@ -557,14 +594,15 @@
 
     <!-- Sensor Measurement Modal -->
     <div id="sensorModal" class="hidden fixed inset-0 z-[60] bg-slate-900 flex flex-col justify-center items-center p-6">
-        <h2 class="text-2xl font-bold text-white mb-2 text-center">Measure Limit</h2>
-        <div class="text-6xl font-mono text-sky-400 mb-6 drop-shadow-lg" id="sensorAltValue">0°</div>
-        <p class="text-slate-400 mb-8 text-center text-sm max-w-xs leading-relaxed">
-            Hold your phone upright and point the back camera at the top of the obstacle in the <span id="sensorDirLabel" class="font-bold text-white text-lg"></span> direction.
+        <h2 class="text-xl font-bold text-white mb-1 text-center" id="sensorModalTitle">Measure Limit</h2>
+        <div class="text-[10px] text-slate-400 mb-6 text-center uppercase tracking-wider">Point device & capture</div>
+        <div class="text-6xl font-mono text-sky-400 mb-8 drop-shadow-lg font-bold" id="sensorValueDisplay">0°</div>
+        <p class="text-slate-300 mb-8 text-center text-xs max-w-xs leading-relaxed bg-slate-800/60 p-4 rounded-xl border border-slate-700" id="sensorInstructions">
+            Point your phone at the desired boundary and capture.
         </p>
         <div class="flex gap-4 w-full max-w-xs">
-            <button onclick="saveSensorMeasurement()" class="flex-1 bg-sky-600 hover:bg-sky-500 px-6 py-4 rounded-xl text-white font-bold shadow-lg transition-colors">Capture</button>
-            <button onclick="closeSensorModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 px-6 py-4 rounded-xl text-white font-bold transition-colors">Cancel</button>
+            <button onclick="saveSensorMeasurement()" class="flex-1 bg-sky-600 hover:bg-sky-500 px-6 py-3.5 rounded-xl text-white font-bold shadow-lg transition-colors text-sm">Capture</button>
+            <button onclick="closeSensorModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 px-6 py-3.5 rounded-xl text-white font-bold transition-colors text-sm">Cancel</button>
         </div>
     </div>
 
@@ -638,13 +676,19 @@
                     }
                 }
             });
-            // Re-render UI elements dependent on language updates
             updateDashboardUI();
         }
 
-
         // ================= CONFIG & STATE =================
-        const defaultRig = { focalLength: 250, aperture: 51, sensor: 'apsc', filter: 'dualband', mount: 'medium', horizon: {n:30, e:30, s:30, w:30} };
+        const defaultRig = { 
+            focalLength: 250, 
+            aperture: 51, 
+            sensor: 'apsc', 
+            filter: 'dualband', 
+            mount: 'medium', 
+            horizon: {n:30, e:30, s:30, w:30},
+            window: { enabled: false, azMin: 0, azMax: 360, altMin: 30, altMax: 60 }
+        };
         const defaultPlaces = [
             { id: 1, name: 'Sderot, Israel', lat: 31.5235, lon: 34.5931 },
             { id: 2, name: 'Shittim / Negev', lat: 30.015, lon: 34.966 },
@@ -653,6 +697,7 @@
 
         let storedRig = JSON.parse(localStorage.getItem('awp_rig'));
         if (storedRig && !storedRig.horizon) storedRig.horizon = {n:30, e:30, s:30, w:30};
+        if (storedRig && !storedRig.window) storedRig.window = { enabled: false, azMin: 0, azMax: 360, altMin: 30, altMax: 60 };
 
         let state = {
             rig: storedRig || defaultRig,
@@ -660,7 +705,7 @@
             activePlaceId: parseInt(localStorage.getItem('awp_active_place')) || 1,
             bookmarkedTargets: JSON.parse(localStorage.getItem('awp_bookmarks')) || [],
             weatherData: null,
-            astroData: null, // 7Timer API
+            astroData: null,
             astroTimes: null
         };
 
@@ -713,9 +758,7 @@
             document.getElementById('nav-' + tab).classList.add('active');
             
             document.querySelectorAll('main > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
-            
-            const targetView = document.getElementById('view-' + tab);
-            targetView.classList.remove('hidden');
+            document.getElementById('view-' + tab).classList.remove('hidden');
             
             if (tab !== 'lightmap') document.getElementById('mainContent').scrollTo(0,0);
             if (tab === 'lightmap') updateLightMap();
@@ -780,52 +823,71 @@
             else badge.classList.add('bg-rose-900', 'text-rose-200', 'border-rose-700'); 
         }
 
-        // ================= SENSOR HORIZON MEASUREMENT =================
-        let activeDirection = null;
-        let sensorCurrentAlt = 0;
+        // ================= SENSOR & WINDOW CALIBRATION =================
+        let activeSensorTarget = null; // 'N', 'E', 'S', 'W', 'azMin', 'azMax', 'altMin', 'altMax'
+        let currentSensorHeading = 0;
+        let currentSensorAlt = 0;
 
         function startSensorMeasurement(dir) {
-            activeDirection = dir;
-            document.getElementById('sensorDirLabel').innerText = dir;
-            
-            // Handle iOS 13+ permission request
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            openSensorModal();
-                        } else {
-                            showMessage("Permission Denied", "Cannot access device sensors to measure the horizon.", "fa-ban");
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                openSensorModal();
-            }
+            activeSensorTarget = dir;
+            document.getElementById('sensorModalTitle').innerText = currentLang === 'en' ? `Measure Horizon (${dir})` : `מדידת אופק (${dir})`;
+            document.getElementById('sensorInstructions').innerText = currentLang === 'en' ? `Point your phone in the ${dir} direction at the horizon limit.` : `כוונו את הטלפון לכיוון ${dir} אל גבול האופק.`;
+            openSensorModal();
+        }
+
+        function startWindowCalibration(param) {
+            activeSensorTarget = param;
+            const names = {
+                azMin: currentLang === 'en' ? 'Left Azimuth (Compass)' : 'אזימוט שמאלי (מצפן)',
+                azMax: currentLang === 'en' ? 'Right Azimuth (Compass)' : 'אזימוט ימני (מצפן)',
+                altMin: currentLang === 'en' ? 'Bottom Altitude' : 'גובה תחתון',
+                altMax: currentLang === 'en' ? 'Top Altitude' : 'גובה עליון'
+            };
+            document.getElementById('sensorModalTitle').innerText = names[param];
+            document.getElementById('sensorInstructions').innerText = currentLang === 'en' ? 'Point your phone at this boundary and tap capture.' : 'כוונו את הטלפון אל גבול זה ולחצו על לכידה.';
+            openSensorModal();
         }
 
         function openSensorModal() {
             document.getElementById('sensorModal').classList.remove('hidden');
-            window.addEventListener('deviceorientation', handleOrientation);
-            sensorCurrentAlt = 0;
-            document.getElementById('sensorAltValue').innerText = '0°';
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(resp => {
+                    if (resp === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+                }).catch(console.error);
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+            currentSensorHeading = 0;
+            currentSensorAlt = 0;
         }
 
         function handleOrientation(event) {
+            if (event.alpha !== null) {
+                let heading = event.webkitCompassHeading || (360 - event.alpha);
+                currentSensorHeading = Math.round((heading + 360) % 360);
+            }
             if (event.beta !== null) {
-                // Assuming portrait orientation.
-                // When phone is vertical (beta ~ 90), pointing at horizon -> alt = 0
-                // When phone tilted back (beta < 90), pointing up -> alt = 90 - beta
                 let alt = 90 - Math.abs(event.beta);
-                // Clamp between 0 and 90
-                sensorCurrentAlt = Math.max(0, Math.min(90, Math.round(alt)));
-                document.getElementById('sensorAltValue').innerText = sensorCurrentAlt + '°';
+                currentSensorAlt = Math.max(0, Math.min(90, Math.round(alt)));
+            }
+
+            if (activeSensorTarget && ['azMin', 'azMax'].includes(activeSensorTarget)) {
+                document.getElementById('sensorValueDisplay').innerText = currentSensorHeading + '°';
+            } else if (activeSensorTarget && ['altMin', 'altMax'].includes(activeSensorTarget)) {
+                document.getElementById('sensorValueDisplay').innerText = currentSensorAlt + '°';
+            } else if (activeSensorTarget) {
+                document.getElementById('sensorValueDisplay').innerText = currentSensorAlt + '°';
             }
         }
 
         function saveSensorMeasurement() {
-            if (activeDirection) {
-                document.getElementById('hz' + activeDirection).value = sensorCurrentAlt;
+            if (!activeSensorTarget) return;
+            if (['azMin', 'azMax'].includes(activeSensorTarget)) {
+                document.getElementById('win' + (activeSensorTarget === 'azMin' ? 'AzMin' : 'AzMax')).value = currentSensorHeading;
+            } else if (['altMin', 'altMax'].includes(activeSensorTarget)) {
+                document.getElementById('win' + (activeSensorTarget === 'altMin' ? 'AltMin' : 'AltMax')).value = currentSensorAlt;
+            } else {
+                document.getElementById('hz' + activeSensorTarget).value = currentSensorAlt;
             }
             closeSensorModal();
         }
@@ -833,6 +895,7 @@
         function closeSensorModal() {
             document.getElementById('sensorModal').classList.add('hidden');
             window.removeEventListener('deviceorientation', handleOrientation);
+            activeSensorTarget = null;
         }
 
         // ================= SETTINGS / RIG =================
@@ -847,6 +910,13 @@
             document.getElementById('hzE').value = state.rig.horizon.e;
             document.getElementById('hzS').value = state.rig.horizon.s;
             document.getElementById('hzW').value = state.rig.horizon.w;
+
+            const win = state.rig.window || defaultRig.window;
+            document.getElementById('winEnabled').checked = win.enabled;
+            document.getElementById('winAzMin').value = win.azMin;
+            document.getElementById('winAzMax').value = win.azMax;
+            document.getElementById('winAltMin').value = win.altMin;
+            document.getElementById('winAltMax').value = win.altMax;
             
             updateRigSummary();
         }
@@ -863,13 +933,20 @@
                     e: parseInt(document.getElementById('hzE').value) || 30,
                     s: parseInt(document.getElementById('hzS').value) || 30,
                     w: parseInt(document.getElementById('hzW').value) || 30,
+                },
+                window: {
+                    enabled: document.getElementById('winEnabled').checked,
+                    azMin: parseFloat(document.getElementById('winAzMin').value) || 0,
+                    azMax: parseFloat(document.getElementById('winAzMax').value) || 360,
+                    altMin: parseFloat(document.getElementById('winAltMin').value) || 0,
+                    altMax: parseFloat(document.getElementById('winAltMax').value) || 90
                 }
             };
             localStorage.setItem('awp_rig', JSON.stringify(state.rig));
             updateRigSummary();
             calculateNightAstroScore(); 
             generateTargetSuggestions();
-            showMessage("Settings Saved", "Your Rig & Horizon profile updated. Scores and targets recalculated.", "fa-check");
+            showMessage(currentLang === 'en' ? "Settings Saved" : "הגדרות נשמרו", currentLang === 'en' ? "Your Rig & Window profile updated." : "פרופיל הציוד והחלון עודכן בהצלחה.", "fa-check");
             switchTab('dashboard');
         }
 
@@ -905,8 +982,8 @@
                                 <i class="fas ${isActive ? 'fa-map-marker-alt' : 'fa-location-arrow'} text-xs"></i>
                             </div>
                             <div class="pe-2 truncate">
-                                <h4 class="font-bold text-sm ${isActive ? 'text-sky-300' : 'text-slate-200'} truncate">${p.name}</h4>
-                                <p class="text-[9px] text-slate-500 font-mono mt-0.5 truncate">${toDMS(p.lat, true)}, ${toDMS(p.lon, false)}</p>
+                                <h4 class="font-bold text-sm ${isActive ? 'text-sky-300' : 'text-slate-200'} truncate" dir="ltr">${p.name}</h4>
+                                <p class="text-[9px] text-slate-500 font-mono mt-0.5 truncate" dir="ltr">${toDMS(p.lat, true)}, ${toDMS(p.lon, false)}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0 z-10">
@@ -1039,19 +1116,16 @@
             const place = getActivePlace();
             
             try {
-                // 1. Open-Meteo
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,cloud_cover,wind_speed_10m&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=8`;
                 const res = await fetch(url);
                 state.weatherData = await res.json();
 
-                // 2. 7Timer API (Real Seeing/Transp)
                 try {
                     const timerUrl = `https://www.7timer.info/bin/astro.php?lon=${place.lon}&lat=${place.lat}&ac=0&unit=metric&output=json&tzshift=0`;
                     const tRes = await fetch(timerUrl);
                     const tData = await tRes.json();
                     state.astroData = tData.dataseries;
                 } catch(e) {
-                    console.log("7Timer API Unavailable, falling back to estimations.");
                     state.astroData = null;
                 }
 
@@ -1162,7 +1236,6 @@
         }
 
         function updateDashboardUI() {
-            if(!state.weatherData || !state.astroTimes) return;
             const res = calculateNightAstroScore(0);
             if (!res) return;
 
@@ -1171,20 +1244,17 @@
             const badgeEl = document.getElementById('scoreBadge');
             
             scoreEl.innerText = score;
-            if (score >= 80) { scoreEl.className = "text-6xl font-black tracking-tighter text-emerald-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-emerald-900/50 text-emerald-300 border border-emerald-700 shadow-inner"; badgeEl.innerText = currentLang === 'en' ? "Excellent" : "מצויין"; }
-            else if (score >= 60) { scoreEl.className = "text-6xl font-black tracking-tighter text-sky-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-sky-900/50 text-sky-300 border border-sky-700 shadow-inner"; badgeEl.innerText = currentLang === 'en' ? "Good" : "טוב"; }
-            else if (score >= 40) { scoreEl.className = "text-6xl font-black tracking-tighter text-yellow-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-yellow-900/50 text-yellow-300 border border-yellow-700 shadow-inner"; badgeEl.innerText = currentLang === 'en' ? "Marginal" : "גבולי"; }
-            else { scoreEl.className = "text-6xl font-black tracking-tighter text-rose-500"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-rose-900/50 text-rose-300 border border-rose-700 shadow-inner"; badgeEl.innerText = currentLang === 'en' ? "Poor" : "גרוע"; }
+            if (score >= 80) { scoreEl.className = "text-6xl font-black tracking-tighter text-emerald-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-emerald-900/50 text-emerald-300 border border-emerald-700 shadow-inner"; badgeEl.innerText = "Excellent"; }
+            else if (score >= 60) { scoreEl.className = "text-6xl font-black tracking-tighter text-sky-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-sky-900/50 text-sky-300 border border-sky-700 shadow-inner"; badgeEl.innerText = "Good"; }
+            else if (score >= 40) { scoreEl.className = "text-6xl font-black tracking-tighter text-yellow-400"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-yellow-900/50 text-yellow-300 border border-yellow-700 shadow-inner"; badgeEl.innerText = "Marginal"; }
+            else { scoreEl.className = "text-6xl font-black tracking-tighter text-rose-500"; badgeEl.className = "px-3 py-1 rounded-lg text-sm font-bold mt-2 bg-rose-900/50 text-rose-300 border border-rose-700 shadow-inner"; badgeEl.innerText = "Poor"; }
 
             let repHour = nightScores.find(h => h.time.getHours() >= 21) || nightScores[0];
             
-            // 7TIMER API INTEGRATION FOR DASHBOARD METRICS
             let seeingUI = "3/5"; let transUI = "3/5";
-            let seeingLabel = currentLang === 'en' ? "Seeing (Est)" : "(הערכה) ראות"; 
-            let transLabel = currentLang === 'en' ? "Transp. (Est)" : "(הערכה) שקיפות";
+            let seeingLabel = "Seeing (Est)"; let transLabel = "Transp. (Est)";
             
             if (state.astroData && state.astroData.length > 0) {
-                // Average first 12 hours (4 timepoints)
                 let seeAvg = 0, trAvg = 0, c = 0;
                 for(let i=0; i<4 && i<state.astroData.length; i++) {
                     seeAvg += state.astroData[i].seeing;
@@ -1201,10 +1271,8 @@
                     return "1/5";
                 };
                 seeingUI = toFive(seeAvg); transUI = toFive(trAvg);
-                seeingLabel = currentLang === 'en' ? "Seeing (API)" : "ראות (API)"; 
-                transLabel = currentLang === 'en' ? "Transp. (API)" : "שקיפות (API)";
+                seeingLabel = "Seeing (API)"; transLabel = "Transp. (API)";
             } else if (repHour) {
-                // Fallback estimates
                 seeingUI = repHour.wind < 10 ? "4/5" : (repHour.wind > 20 ? "2/5" : "3/5");
                 transUI = repHour.cloud < 10 ? "4/5" : "2/5";
             }
@@ -1214,10 +1282,10 @@
                 document.getElementById('metricWind').innerText = `${Math.round(repHour.wind)}`;
             }
             
-            document.getElementById('seeingLabel').innerText = seeingLabel;
             document.getElementById('metricSeeing').innerText = seeingUI;
-            document.getElementById('transpLabel').innerText = transLabel;
+            document.getElementById('metricSeeing').nextElementSibling.innerText = seeingLabel;
             document.getElementById('metricTrans').innerText = transUI;
+            document.getElementById('metricTrans').nextElementSibling.innerText = transLabel;
 
             if (bestStart && bestEnd && score > 30) {
                 let fmt = {hour: '2-digit', minute:'2-digit'};
@@ -1225,20 +1293,20 @@
                 let diffHours = (bestEnd - bestStart) / 3600000;
                 document.getElementById('bestWindowDuration').innerText = `${Math.floor(diffHours)}h ${Math.round((diffHours%1)*60)}m`;
             } else {
-                document.getElementById('bestWindowTime').innerText = currentLang === 'en' ? "None Tonight" : "אין הלילה";
+                document.getElementById('bestWindowTime').innerText = "None Tonight";
                 document.getElementById('bestWindowDuration').innerText = "0h 0m";
             }
 
             let sumTxt = "";
-            if (score >= 70) sumTxt = currentLang === 'en' ? `Clear skies with manageable wind. ` : `שמיים בהירים ורוח סבירה. `;
-            else if (score >= 40) sumTxt = currentLang === 'en' ? `Mixed conditions. Watch out for passing clouds. ` : `תנאים מעורבים. שימו לב לעננים חולפים. `;
-            else sumTxt = currentLang === 'en' ? "Heavy cloud cover or severe wind tonight. Avoid imaging. " : "עננות כבדה או רוחות עזות הלילה. עדיף לא לצלם. ";
+            if (score >= 70) sumTxt = `Clear skies with manageable wind. `;
+            else if (score >= 40) sumTxt = `Mixed conditions. Watch out for passing clouds. `;
+            else sumTxt = "Heavy cloud cover or severe wind tonight. Avoid imaging. ";
             
-            if(repHour && repHour.dewGap < 2) sumTxt += currentLang === 'en' ? "High dew risk, use heaters. " : "סיכון גבוה לטל, השתמשו בחימום. ";
+            if(repHour && repHour.dewGap < 2) sumTxt += "High dew risk, use heaters. ";
             
             if (state.astroTimes.moonIllum > 0.5 && state.astroTimes.moonset && state.astroTimes.moonset > state.astroTimes.astroDusk) {
-                if (state.rig.filter === 'broadband') sumTxt += currentLang === 'en' ? `Bright Moon (${Math.round(state.astroTimes.moonIllum*100)}%) limits broadband.` : `ירח מלא ובוהק מגביל צילום בפס רחב.`;
-                else sumTxt += currentLang === 'en' ? `Bright Moon, but filter mitigates it.` : `ירח בוהק, אך הפילטר יעזור.`;
+                if (state.rig.filter === 'broadband') sumTxt += `Bright Moon (${Math.round(state.astroTimes.moonIllum*100)}%) severely limits broadband imaging.`;
+                else sumTxt += `Bright Moon, but your ${state.rig.filter} filter will mitigate it.`;
             }
             document.getElementById('tonightSummary').innerText = sumTxt;
 
@@ -1246,7 +1314,7 @@
             document.getElementById('timeSunset').innerText = state.astroTimes.sunset.toLocaleTimeString('en-GB', fmt);
             document.getElementById('timeAstroStart').innerText = state.astroTimes.astroDusk.toLocaleTimeString('en-GB', fmt);
             document.getElementById('timeAstroEnd').innerText = state.astroTimes.astroDawn.toLocaleTimeString('en-GB', fmt);
-            document.getElementById('timeMoonset').innerText = state.astroTimes.moonset ? state.astroTimes.moonset.toLocaleTimeString('en-GB', fmt) : (currentLang === 'en' ? "Doesn't set" : "לא שוקע");
+            document.getElementById('timeMoonset').innerText = state.astroTimes.moonset ? state.astroTimes.moonset.toLocaleTimeString('en-GB', fmt) : "Doesn't set";
             document.getElementById('moonIllum').innerText = `${Math.round(state.astroTimes.moonIllum * 100)}%`;
             
             const barStart = new Date(state.astroTimes.sunset);
@@ -1257,19 +1325,14 @@
             const duskPct = ((state.astroTimes.astroDusk - barStart) / totalMs) * 100;
             const dawnPct = ((state.astroTimes.astroDawn - barStart) / totalMs) * 100;
             const indicator = document.getElementById('darknessIndicator');
-            indicator.style.left = `${Math.max(0, duskPct)}%`;
+            indicator.style.insetInlineStart = `${Math.max(0, duskPct)}%`;
             indicator.style.width = `${Math.max(0, dawnPct - Math.max(0, duskPct))}%`;
         }
 
         function render7DayForecast() {
             const container = document.getElementById('forecastList');
             container.innerHTML = '';
-            const daysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const daysHe = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-            const days = currentLang === 'en' ? daysEn : daysHe;
-            const todayStr = currentLang === 'en' ? 'Today' : 'היום';
-            const tmwStr = currentLang === 'en' ? 'Tmw' : 'מחר';
-            
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const daily = state.weatherData.daily;
 
             for(let i=0; i<7; i++) {
@@ -1278,7 +1341,7 @@
                 let score = res ? res.score : 0;
                 
                 const dDate = new Date(daily.time[i]);
-                const dayName = i === 0 ? todayStr : (i === 1 ? tmwStr : days[dDate.getDay()]);
+                const dayName = i === 0 ? 'Today' : (i === 1 ? 'Tmw' : days[dDate.getDay()]);
                 const code = daily.weathercode[i];
                 let icon = "fa-cloud"; let color = "text-slate-400";
                 
@@ -1290,19 +1353,19 @@
                 if(score >= 80) sColor = 'text-emerald-400 font-bold';
                 else if(score < 50) sColor = 'text-rose-400';
 
-                let miniCloud = "--%", miniWind = "--", miniDew = "--", windowText = currentLang === 'en' ? "None" : "אין";
+                let miniCloud = "--%", miniWind = "--", miniDew = "--", windowText = "None";
                 if (res && res.nightScores && res.nightScores.length > 0) {
                     let repHour = res.nightScores.find(h => h.time.getHours() >= 21) || res.nightScores[0];
                     miniCloud = `${repHour.cloud}%`;
                     miniWind = `${Math.round(repHour.wind)}`;
-                    miniDew = repHour.dewGap < 2 ? (currentLang==='en'?"High":"גבוה") : (repHour.dewGap < 4 ? (currentLang==='en'?"Mod":"בינוני") : (currentLang==='en'?"Low":"נמוך"));
+                    miniDew = repHour.dewGap < 2 ? "High" : (repHour.dewGap < 4 ? "Mod" : "Low");
                     if (res.bestStart && res.bestEnd && score > 30) {
                         let fmt = {hour: '2-digit', minute:'2-digit'};
                         windowText = `${res.bestStart.toLocaleTimeString('en-GB', fmt)} - ${res.bestEnd.toLocaleTimeString('en-GB', fmt)}`;
                     }
                 }
 
-                calculateAstroTimesForDay(0); // Reset
+                calculateAstroTimesForDay(0);
 
                 container.innerHTML += `
                     <div class="relative mb-2">
@@ -1311,7 +1374,7 @@
                                 <i class="fas ${icon} ${color} text-xl w-6 text-center drop-shadow-md"></i>
                                 <div>
                                     <div class="font-bold text-slate-200 text-sm">${dayName}</div>
-                                    <div class="text-[9px] text-slate-400 font-medium uppercase font-mono" dir="ltr">${dDate.getDate()}/${dDate.getMonth()+1}</div>
+                                    <div class="text-[9px] text-slate-400 font-medium uppercase">${dDate.getDate()}/${dDate.getMonth()+1}</div>
                                 </div>
                             </div>
                             <div class="text-sm font-semibold text-slate-300 text-center w-[30%] font-mono" dir="ltr">
@@ -1326,13 +1389,19 @@
                         <div id="forecast-detail-${i}" class="hidden forecast-detail flex-col bg-slate-900/80 border border-slate-700/50 rounded-b-xl -mt-3 pt-5 pb-3 px-2 shadow-inner">
                             ${i !== 0 ? `
                             <div class="grid grid-cols-4 gap-1 mb-2 text-center border-b border-slate-700/50 pb-2">
-                                <div><div class="text-[9px] text-slate-500 uppercase">${currentLang==='en'?'Clouds':'עננים'}</div><div class="font-bold text-slate-200 text-xs font-mono">${miniCloud}</div></div>
-                                <div><div class="text-[9px] text-slate-500 uppercase">${currentLang==='en'?'Wind':'רוח'}</div><div class="font-bold text-slate-200 text-xs font-mono">${miniWind} <span class="text-[9px] font-normal text-slate-400">km/h</span></div></div>
-                                <div><div class="text-[9px] text-slate-500 uppercase">${currentLang==='en'?'Dew':'טל'}</div><div class="font-bold text-slate-200 text-xs">${miniDew}</div></div>
-                                <div><div class="text-[9px] text-slate-500 uppercase">${currentLang==='en'?'Window':'חלון'}</div><div class="font-bold text-sky-400 text-[10px] whitespace-nowrap font-mono" dir="ltr">${windowText}</div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Clouds</div><div class="font-bold text-slate-200 text-xs">${miniCloud}</div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Wind</div><div class="font-bold text-slate-200 text-xs">${miniWind} <span class="text-[9px] font-normal text-slate-400">km/h</span></div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Dew</div><div class="font-bold text-slate-200 text-xs">${miniDew}</div></div>
+                                <div><div class="text-[9px] text-slate-500 uppercase">Window</div><div class="font-bold text-sky-400 text-[10px] whitespace-nowrap">${windowText}</div></div>
                             </div>
                             ` : ''}
-                            <div class="w-full h-[140px] relative mt-1" dir="ltr">
+                            <div class="flex justify-center items-center gap-3 text-[9px] text-slate-400 mt-1 mb-1.5 px-1">
+                                <div class="flex items-center gap-1"><div class="w-3 h-0.5 bg-blue-400"></div><span>Clouds</span></div>
+                                <div class="flex items-center gap-1"><div class="w-3 h-0.5 bg-red-400"></div><span>Temp</span></div>
+                                <div class="flex items-center gap-1"><div class="w-3 border-t border-dashed border-purple-400"></div><span>Wind</span></div>
+                                <div class="flex items-center gap-1"><div class="w-3 h-2 bg-blue-900/40 rounded-sm border border-blue-800/50"></div><span>Darkness</span></div>
+                            </div>
+                            <div class="w-full h-[140px] relative mt-1">
                                 <canvas id="canvas-forecast-${i}"></canvas>
                             </div>
                         </div>
@@ -1357,7 +1426,6 @@
                     const mainContent = document.getElementById('mainContent');
                     const rect = detailDiv.getBoundingClientRect();
                     const mainRect = mainContent.getBoundingClientRect();
-                    
                     if (rect.bottom > mainRect.bottom) {
                         mainContent.scrollBy({ top: (rect.bottom - mainRect.bottom) + 80, behavior: 'smooth' });
                     }
@@ -1416,7 +1484,7 @@
                 options: {
                     responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                     plugins: { 
-                        legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', usePointStyle: true, boxWidth: 6, font: {size: 9} } },
+                        legend: { display: false },
                         annotation: { annotations: { box1: { type: 'box', xMin: astroStartIndex, xMax: astroEndIndex, backgroundColor: 'rgba(30, 58, 138, 0.25)', borderWidth: 0 } } }
                     },
                     scales: {
@@ -1426,7 +1494,7 @@
                     }
                 }
             });
-            calculateAstroTimesForDay(0); // Restore
+            calculateAstroTimesForDay(0);
         }
 
         // ================= TARGET SUGGESTION ENGINE & FOV =================
@@ -1450,7 +1518,7 @@
             const gmst = getGMST(date);
             const lst = (gmst + lon) % 360;
             let ha = (lst - raDeg) * Math.PI / 180;
-            ha = Math.atan2(Math.sin(ha), Math.cos(ha)); 
+            ha = Math.atan2(Math.sin(ha), Math.cos(ha));
             
             const dec = decDeg * Math.PI / 180;
             const phi = lat * Math.PI / 180;
@@ -1459,7 +1527,7 @@
             const alt = Math.asin(sinAlt);
 
             const cosAz = (Math.sin(dec) - Math.sin(alt) * Math.sin(phi)) / (Math.cos(alt) * Math.cos(phi));
-            let az = Math.acos(Math.max(-1, Math.min(1, cosAz))); 
+            let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
             if (Math.sin(ha) > 0) az = 2 * Math.PI - az;
 
             return { alt: alt * 180 / Math.PI, az: az * 180 / Math.PI };
@@ -1470,7 +1538,7 @@
             if (az >= 90 && az < 180) return limits.e + (limits.s - limits.e) * ((az - 90) / 90);
             if (az >= 180 && az < 270) return limits.s + (limits.w - limits.s) * ((az - 180) / 90);
             if (az >= 270 && az <= 360) return limits.w + (limits.n - limits.w) * ((az - 270) / 90);
-            return 30; // fallback
+            return 30;
         }
 
         function toggleBookmark(targetName, e) {
@@ -1488,6 +1556,7 @@
             const rig = state.rig;
             const place = getActivePlace();
             const sensor = getSensorDimensions(rig.sensor);
+            const win = rig.window || { enabled: false, azMin: 0, azMax: 360, altMin: 0, altMax: 90 };
             
             const fovW = 2 * Math.atan(sensor.w / (2 * rig.focalLength)) * (180 / Math.PI) * 60;
             const fovH = 2 * Math.atan(sensor.h / (2 * rig.focalLength)) * (180 / Math.PI) * 60;
@@ -1525,14 +1594,27 @@
                         const currentLimit = getHorizonLimit(az, rig.horizon);
                         
                         if (alt > maxAlt) maxAlt = alt;
-                        if (alt >= currentLimit) hoursVisible += 0.5;
+                        
+                        let inWindow = true;
+                        if (win.enabled) {
+                            let azMatch = false;
+                            if (win.azMin <= win.azMax) {
+                                azMatch = (az >= win.azMin && az <= win.azMax);
+                            } else {
+                                azMatch = (az >= win.azMin || az <= win.azMax);
+                            }
+                            let altMatch = (alt >= win.altMin && alt <= win.altMax);
+                            inWindow = azMatch && altMatch;
+                        }
+
+                        if (alt >= currentLimit && inWindow) hoursVisible += 0.5;
                         currentT = new Date(currentT.getTime() + 1800000); 
                     }
                 }
 
                 if (hoursVisible < 1.5) { 
                     score = 0; 
-                    if (!msg) msg = "Below Horizon limits";
+                    if (!msg) msg = win.enabled ? "Outside Imaging Window" : "Below Horizon limits";
                 } else { 
                     score += (maxAlt * 0.5); 
                     score += (hoursVisible * 2); 
@@ -1610,20 +1692,18 @@
             document.getElementById('targetVisHours').innerText = `${target.hoursVisible}h`;
             document.getElementById('targetSize').innerText = `${target.size}'`;
             
-            // --- ALADIN LITE FOV INJECTION ---
             if (!window.aladinInstance) {
                 A.init.then(() => {
                     window.aladinInstance = A.aladin('#aladin-container', {
                         survey: "P/DSS2/color", showLayersControl: false, showFullscreenControl: false,
                         showSimbadPointerControl: false, showReticle: false, showCooGridControl: false
                     });
-                    window.aladinOverlay = A.graphicOverlay({color: '#ef4444', lineWidth: 2}); // Red Box
+                    window.aladinOverlay = A.graphicOverlay({color: '#ef4444', lineWidth: 2});
                     window.aladinInstance.addOverlay(window.aladinOverlay);
                     updateAladinTarget(target);
                 });
             } else { updateAladinTarget(target); }
 
-            // --- TARGET CHART GENERATION ---
             const place = getActivePlace();
             let labels = []; let alts = []; let moonAlts = []; let horizonLimits = [];
             const startT = new Date(state.astroTimes.sunset);
