@@ -901,13 +901,21 @@
                         document.getElementById('compassUI').style.transform = `rotate(${-currentSensorValue}deg)`;
                     }
                 } else if (sensorTypeActive === 'altitude') {
-                    // Gyro Altitude. Phone vertical (beta=90) -> Alt 0. Phone flat up (beta=0) -> Alt 90.
+                    // Gyro Altitude. Phone vertical (beta=90) -> Alt 0. Pointing to sky (beta=180) -> Alt 90.
                     if (e.beta != null) {
-                        let alt = Math.max(0, Math.min(90, Math.round(90 - Math.abs(e.beta))));
+                        let alt = Math.round(e.beta - 90);
+                        
+                        // Handle if user tilts past the zenith (straight up)
+                        if (alt > 90) {
+                            alt = 180 - alt;
+                        }
+                        
+                        alt = Math.max(0, Math.min(90, alt));
                         currentSensorValue = alt;
                         document.getElementById('sensorLiveValue').innerText = `${currentSensorValue}°`;
-                        // Move ladder (30px per 10 deg)
-                        let offset = (alt - 45) * 3; 
+                        
+                        // Move ladder (30px gap + 2px line = 32px per 10 deg => 3.2px per deg)
+                        let offset = (alt - 45) * 3.2; 
                         document.getElementById('pitchLadder').style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
                     }
                 }
