@@ -928,7 +928,7 @@
             calculateNightAstroScore(); 
             generateTargetSuggestions(); // Instantly update target suggestions with new window
             showMessage(currentLang === 'en' ? "Settings Saved" : "הגדרות נשמרו", currentLang === 'en' ? "Your Rig & Backyard Window profile updated and targets recalculated." : "פרופיל הציוד וחלון הצילום עודכנו והיעדים חושבו מחדש.", "fa-check");
-            switchTab('dashboard');
+            switchTab('targets');
         }
 
         function updateRigSummary() {
@@ -1679,7 +1679,8 @@
             } else { updateAladinTarget(target); }
 
             const place = getActivePlace();
-            let labels = []; let alts = []; let moonAlts = [];
+            let labels = []; let alts = []; let moonAlts = []; let inWindowMap = [];
+            const win = state.rig.window || { enabled: false };
             const startT = new Date(state.astroTimes.sunset);
             startT.setHours(18, 0, 0, 0);
             
@@ -1689,9 +1690,24 @@
                 const t = new Date(startT.getTime() + (i * 1800000));
                 labels.push(t.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}));
                 
-                const { alt } = getAzAlt(t, place.lat, place.lon, target.ra, target.dec);
+                const { alt, az } = getAzAlt(t, place.lat, place.lon, target.ra, target.dec);
                 alts.push(Math.max(0, alt)); 
                 if (alt > peakAlt) { peakAlt = alt; peakTime = t; }
+
+                let inWindow = false;
+                if (win.enabled) {
+                    let azMatch = false;
+                    if (win.azMin <= win.azMax) {
+                        azMatch = (az >= win.azMin && az <= win.azMax);
+                    } else {
+                        azMatch = (az >= win.azMin || az <= win.azMax);
+                    }
+                    let altMatch = (alt >= win.altMin && alt <= win.altMax);
+                    inWindow = azMatch && altMatch;
+                } else {
+                    inWindow = alt >= 30; // default visible limit
+                }
+                inWindowMap.push(inWindow);
 
                 const moonPos = SunCalc.getMoonPosition(t, place.lat, place.lon);
                 moonAlts.push(Math.max(0, moonPos.altitude * 180 / Math.PI));
@@ -1702,27 +1718,38 @@
             const ctx = document.getElementById('targetCanvas').getContext('2d');
             if(targetChart) targetChart.destroy();
             
-            // Build annotations for Backyard Window if enabled
-            const win = state.rig.window || { enabled: false };
             let annotationsConfig = {};
-            if (win.enabled) {
-                annotationsConfig.windowBand = {
+            let windowBoxes = [];
+            let startIdx = -1;
+            for(let i=0; i<inWindowMap.length; i++) {
+                if(inWindowMap[i] && startIdx === -1) startIdx = i;
+                else if(!inWindowMap[i] && startIdx !== -1) {
+                    windowBoxes.push({start: startIdx, end: i-1});
+                    startIdx = -1;
+                }
+            }
+            if(startIdx !== -1) windowBoxes.push({start: startIdx, end: inWindowMap.length-1});
+
+            windowBoxes.forEach((box, index) => {
+                annotationsConfig[`winBox${index}`] = {
                     type: 'box',
-                    yMin: win.altMin,
-                    yMax: win.altMax,
-                    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                    borderColor: 'rgba(56, 189, 248, 0.4)',
+                    xMin: box.start,
+                    xMax: box.end,
+                    yMin: win.enabled ? win.altMin : 30,
+                    yMax: win.enabled ? win.altMax : 90,
+                    backgroundColor: 'rgba(163, 230, 53, 0.12)', 
+                    borderColor: 'rgba(163, 230, 53, 0.4)',
                     borderWidth: 1,
                     borderDash: [4, 4],
                     label: {
-                        display: true,
-                        content: 'Backyard Window',
-                        color: '#38bdf8',
+                        display: index === 0,
+                        content: win.enabled ? 'In Window' : 'Visible (>30°)',
+                        color: '#a3e635',
                         font: { size: 9, weight: 'bold' },
                         position: 'start'
                     }
                 };
-            }
+            });
 
             Chart.defaults.font.family = "'Inter', sans-serif";
             targetChart = new Chart(ctx, {
@@ -1730,7 +1757,19 @@
                 data: {
                     labels,
                     datasets: [
-                        { label: 'Target Alt', data: alts, borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { 
+                            label: 'Target Alt', 
+                            data: alts, 
+                            borderColor: '#38bdf8', 
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)', 
+                            fill: true, 
+                            tension: 0.4, 
+                            pointRadius: 0,
+                            segment: {
+                                borderColor: ctx => inWindowMap[ctx.p0DataIndex] ? '#a3e635' : '#38bdf8',
+                                borderWidth: ctx => inWindowMap[ctx.p0DataIndex] ? 4 : 2,
+                            }
+                        },
                         { label: 'Moon Alt', data: moonAlts, borderColor: '#cbd5e1', borderDash: [5,5], tension: 0.4, borderWidth: 1, pointRadius: 0 }
                     ]
                 },
