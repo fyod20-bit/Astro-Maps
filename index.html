@@ -8,8 +8,12 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script defer src="https://aladin.cds.unistra.fr/AladinLite/api/v3/latest/aladin.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -32,7 +36,9 @@
         <article class="card metric"><span>Confidence</span><strong id="confidenceScore">—</strong><small id="confidenceWhy">—</small></article>
       </div>
       <article class="card window-card"><div><p class="eyebrow">BEST USABLE WINDOW</p><h3 id="bestWindow">—</h3></div><strong id="bestDuration">—</strong></article>
-      <article class="card"><div class="section-head"><div><p class="eyebrow">SESSION TIMELINE</p><h3 id="timelineTitle">Weather + selected target</h3></div><div class="legend"><span class="l-cloud">Cloud</span><span class="l-alt">Target</span><span class="l-moon">Moon</span></div></div><div class="chart-wrap"><canvas id="timelineChart"></canvas></div></article>
+      <article class="card window-card"><div><p class="eyebrow">ASTRONOMICAL NIGHT · SUN BELOW −18°</p><h3 id="dashboardAstroNight">—</h3></div><strong id="dashboardAstroDuration">—</strong></article>
+      <article class="card main-sky-window"><div class="section-head"><div><p class="eyebrow">AVAILABLE SKY WINDOW</p><h3 id="mainWindowTitle">—</h3></div><label class="switch"><input id="mainWindowToggle" type="checkbox"><span></span></label></div><div id="mainWindowDetails" class="data-grid"></div><p id="mainWindowTarget" class="muted"></p><button id="editMainWindow" class="ghost">Measure or edit window</button></article>
+      <article class="card"><div class="section-head"><div><p class="eyebrow">SESSION TIMELINE</p><h3 id="timelineTitle">Weather + selected target</h3></div><small class="muted">Click any legend item to show or hide it</small></div><div class="chart-wrap"><canvas id="timelineChart"></canvas></div></article>
       <article class="card warnings"><p class="eyebrow">NIGHT NOTES</p><div id="nightNotes"></div></article>
       <h3 class="list-title">7-night outlook</h3><div id="nightList" class="night-list"></div>
     </section>
@@ -45,7 +51,9 @@
 
     <section id="plan" class="view">
       <div class="section-head"><div><p class="eyebrow">NIGHT PLAN</p><h2 id="planTitle">Capture sequence</h2></div><button id="exportButton" class="ghost">Export CSV</button></div>
-      <p class="muted">Plans use uninterrupted clear periods, target altitude, Moon separation and your horizon. Times are suggestions—keep mount limits and cable safety in mind.</p>
+      <article class="card astro-night"><span>Astronomical darkness (Sun below −18°)</span><strong id="astroNightHours">—</strong><small id="astroNightDuration">—</small></article>
+      <div class="plan-toolbar card"><button id="autoPlanButton" class="primary">Generate auto plan</button><select id="manualTargetSelect" aria-label="Target to add"></select><button id="addPlanTarget" class="ghost">Add target</button><button id="clearPlanButton" class="ghost danger">Clear plan</button></div>
+      <p class="muted">Suggestions only use astronomical darkness, then score weather, target altitude, Moon separation, light pollution, framing and your measured sky window.</p>
       <div id="planList" class="plan-list"></div>
       <textarea id="planNotes" class="card" placeholder="Session notes, exposure plan, completed integration…"></textarea>
       <button id="savePlanButton" class="primary wide">Save plan and notes</button>
@@ -53,7 +61,7 @@
 
     <section id="places" class="view">
       <p class="eyebrow">OBSERVING SITES</p><h2>Locations</h2>
-      <button id="gpsButton" class="primary wide">Use current GPS location</button>
+      <div class="location-actions"><button id="gpsButton" class="primary">Use current GPS location</button><button id="mapPickerButton" class="ghost">Choose exact point on map</button></div>
       <form id="placeForm" class="card form-grid"><input id="placeName" placeholder="Site name" required><input id="placeLat" type="number" step="any" placeholder="Latitude" required><input id="placeLon" type="number" step="any" placeholder="Longitude" required><input id="placeBortle" type="number" min="1" max="9" placeholder="Bortle (manual)"><input id="placeSqm" type="number" step=".01" min="10" max="23" placeholder="SQM (optional)"><button class="primary" type="submit">Add site</button></form>
       <p class="muted">Bortle is intentionally manual. Automatic estimates based on city names or latitude are not reliable.</p><div id="placeList"></div>
     </section>
@@ -71,7 +79,6 @@
         <label>Primary filter<select id="filter"><option value="broadband">Broadband / UV-IR</option><option value="haoiii">Ha + OIII (L-Ultimate)</option><option value="siioiii">SII + OIII (Askar E2)</option><option value="mono">Mono narrowband</option></select></label>
         <label>Mount type<select id="mount"><option value="tracker">Star tracker</option><option value="medium">Medium EQ / harmonic</option><option value="heavy">Heavy EQ</option></select></label>
         <label>Maximum wind (km/h)<input id="windLimit" type="number"></label>
-        <label>General minimum target altitude (°)<input id="minAlt" type="number" min="0" max="80"></label>
         <button class="primary" type="submit">Save profile</button>
       </form>
       <article class="card"><p class="eyebrow">CALCULATED OPTICS</p><div id="opticsSummary" class="data-grid"></div></article>
@@ -82,13 +89,14 @@
         <label class="window-toggle"><input id="windowEnabled" type="checkbox"> Use this window when ranking targets and building the plan</label>
         <div id="windowSummary" class="window-summary"></div><button id="saveHorizon" class="primary wide">Save available sky window</button>
       </article>
-      <article class="card"><p class="eyebrow">SCORING LIMITS</p><div class="form-grid"><label>Preferred cloud ≤ %<input id="cloudLimit" type="number"></label><label>Dew warning gap °C<input id="dewLimit" type="number" step=".5"></label><label>Minimum window hours<input id="windowLimit" type="number" step=".5"></label></div></article>
+      <article class="card"><p class="eyebrow">SCORING LIMITS</p><div class="form-grid"><label>Minimum target altitude (°)<input id="minTargetAlt" type="number" min="0" max="80"></label><label>Preferred cloud ≤ %<input id="cloudLimit" type="number"></label><label>Dew warning gap °C<input id="dewLimit" type="number" step=".5"></label><label>Minimum window hours<input id="windowLimit" type="number" step=".5"></label></div></article>
     </section>
   </main>
 
   <nav class="bottom-nav"><button data-view="dashboard" class="active">⌁<span>Weather</span></button><button data-view="targets">◎<span>Targets</span></button><button data-view="plan">☷<span>Plan</span></button><button data-view="places">⌖<span>Sites</span></button><button data-view="settings">⚙<span>Rig</span></button></nav>
-  <dialog id="targetDialog"><button id="closeDialog" class="dialog-close">×</button><div id="targetDetail"></div><div class="chart-wrap"><canvas id="targetChart"></canvas></div></dialog>
+  <dialog id="targetDialog"><button id="closeDialog" class="dialog-close">×</button><div id="targetDetail"></div><section class="composition"><div class="section-head"><div><p class="eyebrow">COMPOSITION PREVIEW</p><h3>Survey image + your rig FOV</h3></div><select id="surveySelect"><option value="P/DSS2/color">DSS2 Color</option><option value="P/PanSTARRS/DR1/color-z-zg-g">Pan-STARRS Color</option><option value="P/2MASS/color">2MASS Infrared</option></select></div><div id="aladinContainer"><div id="aladinView"></div><div id="fovFrame"><span class="frame-label">YOUR SENSOR</span><i class="center-mark"></i></div><div class="target-marker">+</div></div><div class="composition-controls"><label>Rotation <strong id="rotationValue">0°</strong><input id="rotationSlider" type="range" min="-180" max="180" value="0"></label><button id="centerFrame" class="ghost">Center target</button><button id="saveFrame" class="primary">Save composition</button></div><p id="compositionStatus" class="muted">Drag the cyan frame over the image and rotate it to explore compositions.</p></section><div class="chart-wrap"><canvas id="targetChart"></canvas></div></dialog>
   <dialog id="sensorDialog" class="sensor-dialog"><button id="cancelSensor" class="dialog-close">×</button><p class="eyebrow">SKY WINDOW CALIBRATION</p><h2 id="sensorStepTitle">Measure boundary</h2><p id="sensorInstructions" class="muted"></p><div class="sensor-readout"><strong id="sensorValue">—°</strong><span id="sensorSecondary">Waiting for phone sensors…</span></div><div class="sensor-progress" id="sensorProgress"></div><button id="captureSensor" class="primary wide">Capture this boundary</button><p class="sensor-help">Keep the phone in portrait orientation with the screen facing you and the back pointing toward the sky boundary. Compass readings can be affected by metal, the mount and the tripod—step away from them while measuring.</p></dialog>
+  <dialog id="mapDialog" class="map-dialog"><button id="closeMap" class="dialog-close">×</button><p class="eyebrow">OBSERVING LOCATION</p><h2>Choose an exact point</h2><div class="map-search"><input id="mapSearchInput" type="search" placeholder="Search city or place…"><button id="mapSearchButton" class="ghost">Search</button></div><p class="muted">Tap the map or drag the marker to the exact setup position.</p><div id="locationMap"></div><div class="map-coordinates"><strong id="mapCoordinates">—</strong><button id="mapUseGPS" class="ghost">Center on my GPS</button></div><div class="form-grid"><label>Location name<input id="mapPlaceName" placeholder="e.g. Beer Milka field"></label><label>Modeled Bortle (optional)<input id="mapBortle" type="number" min="1" max="9" step=".1"></label><label>Modeled/measured SQM (optional)<input id="mapSqm" type="number" min="10" max="23" step=".01"></label></div><a id="mapLightPollutionLink" class="ghost lp-link" target="_blank" rel="noopener">Check this point on LightPollutionMap.app ↗</a><p class="sensor-help">Copy the site’s SQM and decimal Bortle here. The website uses a proprietary model, so AstroWindow stores the result instead of claiming to reproduce it.</p><button id="saveMapLocation" class="primary wide">Save as active observing site</button></dialog>
   <div id="toast" role="status"></div>
 </body>
 </html>
