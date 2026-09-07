@@ -11,4 +11,10 @@ Static, installable astrophotography weather and session planner. No API keys or
 
 Do not open `index.html` directly from the file system: location, offline caching, and installation require HTTPS or localhost.
 
-Weather data: Open-Meteo. Sky imagery: Aladin Lite/CDS. Astronomy calculations: Astronomy Engine.
+Weather data: Open-Meteo. Astronomy calculations: SunCalc plus local coordinate transforms.
+
+## Measuring an available sky window
+
+Open **Rig → Available Sky Window → Start guided measurement** on your phone. Capture the left and right compass edges, then the bottom and top altitude edges. Enable the window and save it. Target ranking and generated plans will count only times when the target centre is inside the measured opening.
+
+Phone compass accuracy can be degraded near a metal mount, tripod, car or reinforced wall. Calibrate the compass first and measure a few steps away from the rig.

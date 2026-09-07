@@ -62,17 +62,33 @@
       <div class="section-head"><div><p class="eyebrow">EQUIPMENT</p><h2>Rig profiles</h2></div><button id="newRigButton" class="ghost">New profile</button></div>
       <select id="rigSelect" class="wide-select"></select>
       <form id="rigForm" class="card form-grid">
-        <input id="rigName" placeholder="Profile name" required><input id="focalLength" type="number" min="20" placeholder="Focal length (mm)" required><input id="aperture" type="number" min="10" placeholder="Aperture (mm)" required><input id="sensorWidth" type="number" step=".1" placeholder="Sensor width (mm)" required><input id="sensorHeight" type="number" step=".1" placeholder="Sensor height (mm)" required><input id="pixelSize" type="number" step=".01" placeholder="Pixel size (µm)" required>
-        <select id="filter"><option value="broadband">Broadband / UV-IR</option><option value="haoiii">Ha + OIII (L-Ultimate)</option><option value="siioiii">SII + OIII (Askar E2)</option><option value="mono">Mono narrowband</option></select><select id="mount"><option value="tracker">Star tracker</option><option value="medium">Medium EQ / harmonic</option><option value="heavy">Heavy EQ</option></select><input id="windLimit" type="number" placeholder="Max wind km/h"><input id="minAlt" type="number" min="0" max="80" placeholder="Minimum altitude °"><button class="primary" type="submit">Save profile</button>
+        <label>Profile name<input id="rigName" placeholder="e.g. FRA400 native + E2" required></label>
+        <label>Focal length (mm)<input id="focalLength" type="number" min="20" required></label>
+        <label>Aperture (mm)<input id="aperture" type="number" min="10" required></label>
+        <label>Sensor width (mm)<input id="sensorWidth" type="number" step=".1" required></label>
+        <label>Sensor height (mm)<input id="sensorHeight" type="number" step=".1" required></label>
+        <label>Pixel size (µm)<input id="pixelSize" type="number" step=".01" required></label>
+        <label>Primary filter<select id="filter"><option value="broadband">Broadband / UV-IR</option><option value="haoiii">Ha + OIII (L-Ultimate)</option><option value="siioiii">SII + OIII (Askar E2)</option><option value="mono">Mono narrowband</option></select></label>
+        <label>Mount type<select id="mount"><option value="tracker">Star tracker</option><option value="medium">Medium EQ / harmonic</option><option value="heavy">Heavy EQ</option></select></label>
+        <label>Maximum wind (km/h)<input id="windLimit" type="number"></label>
+        <label>General minimum target altitude (°)<input id="minAlt" type="number" min="0" max="80"></label>
+        <button class="primary" type="submit">Save profile</button>
       </form>
       <article class="card"><p class="eyebrow">CALCULATED OPTICS</p><div id="opticsSummary" class="data-grid"></div></article>
-      <article class="card"><div class="section-head"><div><p class="eyebrow">CUSTOM HORIZON</p><h3>Minimum altitude by direction</h3></div></div><div class="horizon-grid"><label>N <input id="hzN" type="number"></label><label>E <input id="hzE" type="number"></label><label>S <input id="hzS" type="number"></label><label>W <input id="hzW" type="number"></label></div><button id="saveHorizon" class="primary wide">Save horizon</button></article>
+      <article class="card">
+        <div class="section-head"><div><p class="eyebrow">AVAILABLE SKY WINDOW</p><h3>Measure the opening from this location</h3></div><button id="calibrateWindow" class="primary">Start guided measurement</button></div>
+        <p class="muted">Point the back of your phone toward each visible boundary. Measure the left and right edges with the compass, then the bottom and top edges by tilting the phone.</p>
+        <div class="window-grid"><label>Left edge · azimuth (°)<input id="winLeft" type="number" min="0" max="360"></label><label>Right edge · azimuth (°)<input id="winRight" type="number" min="0" max="360"></label><label>Bottom edge · altitude (°)<input id="winBottom" type="number" min="-10" max="90"></label><label>Top edge · altitude (°)<input id="winTop" type="number" min="0" max="90"></label></div>
+        <label class="window-toggle"><input id="windowEnabled" type="checkbox"> Use this window when ranking targets and building the plan</label>
+        <div id="windowSummary" class="window-summary"></div><button id="saveHorizon" class="primary wide">Save available sky window</button>
+      </article>
       <article class="card"><p class="eyebrow">SCORING LIMITS</p><div class="form-grid"><label>Preferred cloud ≤ %<input id="cloudLimit" type="number"></label><label>Dew warning gap °C<input id="dewLimit" type="number" step=".5"></label><label>Minimum window hours<input id="windowLimit" type="number" step=".5"></label></div></article>
     </section>
   </main>
 
   <nav class="bottom-nav"><button data-view="dashboard" class="active">⌁<span>Weather</span></button><button data-view="targets">◎<span>Targets</span></button><button data-view="plan">☷<span>Plan</span></button><button data-view="places">⌖<span>Sites</span></button><button data-view="settings">⚙<span>Rig</span></button></nav>
   <dialog id="targetDialog"><button id="closeDialog" class="dialog-close">×</button><div id="targetDetail"></div><div class="chart-wrap"><canvas id="targetChart"></canvas></div></dialog>
+  <dialog id="sensorDialog" class="sensor-dialog"><button id="cancelSensor" class="dialog-close">×</button><p class="eyebrow">SKY WINDOW CALIBRATION</p><h2 id="sensorStepTitle">Measure boundary</h2><p id="sensorInstructions" class="muted"></p><div class="sensor-readout"><strong id="sensorValue">—°</strong><span id="sensorSecondary">Waiting for phone sensors…</span></div><div class="sensor-progress" id="sensorProgress"></div><button id="captureSensor" class="primary wide">Capture this boundary</button><p class="sensor-help">Keep the phone in portrait orientation with the screen facing you and the back pointing toward the sky boundary. Compass readings can be affected by metal, the mount and the tripod—step away from them while measuring.</p></dialog>
   <div id="toast" role="status"></div>
 </body>
 </html>
